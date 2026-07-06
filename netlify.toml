@@ -1,0 +1,28 @@
+# netlify.toml — Avatar Pro JCOTRAINER
+
+[build]
+  publish = "public"              # carpeta con el HTML estático
+  functions = "netlify/functions" # carpeta con las funciones serverless
+
+# Redirige /api/claude → función serverless (URL limpia para el frontend)
+[[redirects]]
+  from   = "/api/claude"
+  to     = "/.netlify/functions/claude-proxy"
+  status = 200
+
+# SPA fallback — por si agregas rutas en el futuro
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
+
+[functions]
+  node_bundler = "esbuild"        # bundler más rápido, soportado en Netlify
+
+# Headers de seguridad globales
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options        = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy        = "strict-origin-when-cross-origin"
