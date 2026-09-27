@@ -53,6 +53,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-ser
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .form-grid.full { grid-template-columns: 1fr; }
 .field { display: flex; flex-direction: column; gap: 6px; }
+.field-hint { font-size: 12px; font-weight: 400; text-transform: none; letter-spacing: normal; color: var(--muted); opacity: 0.8; margin-top: -2px; margin-bottom: 2px; line-height: 1.4; }
 .field.span2 { grid-column: span 2; }
 label { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
 input, select, textarea {
@@ -199,10 +200,12 @@ select option { background: var(--card); }
       <div class="form-grid">
         <div class="field">
           <label>Nombre ficticio del avatar</label>
+          <div class="field-hint">Ponle nombre y apellido, como si fuera un cliente real. Un avatar sin nombre se queda en la teoría.</div>
           <input type="text" id="f_nombre" placeholder='Ej: "Roberto el oficinista"' oninput="updateProgress()">
         </div>
         <div class="field">
           <label>Género</label>
+          <div class="field-hint">Define uno. Un avatar que le habla a "todos" no le habla a nadie.</div>
           <select id="f_genero" onchange="updateProgress()">
             <option value="">Seleccionar...</option>
             <option>Hombre</option><option>Mujer</option><option>Cualquier género</option>
@@ -210,18 +213,22 @@ select option { background: var(--card); }
         </div>
         <div class="field">
           <label>Rango de edad</label>
+          <div class="field-hint">Máximo 10-15 años de rango. Mientras más acotado, más preciso el mensaje.</div>
           <input type="text" id="f_edad" placeholder="Ej: 30 a 45 años" oninput="updateProgress()">
         </div>
         <div class="field">
           <label>Ocupación</label>
+          <div class="field-hint">No pongas "profesional". Sé específico: el tipo de trabajo cambia sus horarios, su energía y sus excusas.</div>
           <input type="text" id="f_ocup" placeholder="Ej: Ejecutivo, mamá, emprendedor..." oninput="updateProgress()">
         </div>
         <div class="field">
           <label>Ciudad / Zona</label>
+          <div class="field-hint">Si entrenas presencial, esto define tu radio real de clientes. Si es online, define códigos culturales del mensaje.</div>
           <input type="text" id="f_ciudad" placeholder="Ej: Santiago, Providencia..." oninput="updateProgress()">
         </div>
         <div class="field">
           <label>Nivel de ingresos</label>
+          <div class="field-hint">Esto define lo que puede pagar y qué objeciones de precio vas a enfrentar. No lo saltes.</div>
           <select id="f_ingresos" onchange="updateProgress()">
             <option value="">Seleccionar...</option>
             <option>Bajo (menos de $500.000)</option>
@@ -242,10 +249,12 @@ select option { background: var(--card); }
       <div class="form-grid full">
         <div class="field">
           <label>Dolor principal (en palabras de tu cliente, no tuyas)</label>
+          <div class="field-hint">Cópialo textual de una conversación real, un mensaje de WhatsApp o un comentario que te hayan dicho. Nunca lo redactes tú — pierde autenticidad.</div>
           <textarea id="f_dolor" placeholder='Ej: "Llevo 3 años intentando bajar de peso, lo intento y lo dejo, llego agotado del trabajo y no tengo energía para nada..."' oninput="updateProgress()"></textarea>
         </div>
         <div class="field">
           <label>Frustraciones más comunes (selecciona todas las que aplican)</label>
+          <div class="field-hint">Marca solo las que hayas escuchado de verdad, no las que "crees" que aplican.</div>
           <div class="chips" id="c_frust">
             <button class="chip" onclick="toggleChip(this,'on-red')">Dietas que no duran</button>
             <button class="chip" onclick="toggleChip(this,'on-red')">Resultados lentos</button>
@@ -260,6 +269,7 @@ select option { background: var(--card); }
         </div>
         <div class="field">
           <label>¿Qué intentó antes que NO funcionó?</label>
+          <div class="field-hint">Esto es oro: te dice qué NO repetir en tu propuesta y qué objeción viene preparada.</div>
           <input type="text" id="f_intento" placeholder="Ej: Gimnasio 3 meses, dieta keto, app de entrenamiento..." oninput="updateProgress()">
         </div>
       </div>
@@ -274,10 +284,12 @@ select option { background: var(--card); }
       <div class="form-grid full">
         <div class="field">
           <label>Su gran sueño o meta principal</label>
+          <div class="field-hint">Ve más allá del físico. ¿Qué cambia en su vida diaria cuando lo logra?</div>
           <textarea id="f_sueno" placeholder='Ej: Verse sin camiseta en verano, tener energía para jugar con sus hijos, sentirse seguro en una reunión de trabajo...' oninput="updateProgress()"></textarea>
         </div>
         <div class="field">
           <label>Resultado emocional que realmente busca</label>
+          <div class="field-hint">Nadie compra "bajar de peso". Compra sentirse seguro, respetado, con energía. Nombra la emoción.</div>
           <div class="chips" id="c_emoc">
             <button class="chip" onclick="toggleChip(this,'on-green')">Confianza</button>
             <button class="chip" onclick="toggleChip(this,'on-green')">Energía</button>
@@ -302,6 +314,7 @@ select option { background: var(--card); }
       <div class="form-grid">
         <div class="field">
           <label>Redes sociales que más usa</label>
+          <div class="field-hint">Define dónde vas a publicar el contenido que este kit te va a generar.</div>
           <div class="chips" id="c_redes">
             <button class="chip" onclick="toggleChip(this,'on')">Instagram</button>
             <button class="chip" onclick="toggleChip(this,'on')">TikTok</button>
@@ -313,6 +326,7 @@ select option { background: var(--card); }
         </div>
         <div class="field">
           <label>Nivel de condición física actual</label>
+          <div class="field-hint">Ajusta el tono: alguien sedentario necesita otro nivel de empatía que alguien que ya entrena.</div>
           <div class="chips" id="c_nivel">
             <button class="chip" onclick="toggleChip(this,'on')">Sedentario</button>
             <button class="chip" onclick="toggleChip(this,'on')">Principiante</button>
@@ -322,6 +336,7 @@ select option { background: var(--card); }
         </div>
         <div class="field span2">
           <label>Principales objeciones para contratar</label>
+          <div class="field-hint">Anticipa la objeción antes de que la diga en la llamada de venta.</div>
           <div class="chips" id="c_obj">
             <button class="chip" onclick="toggleChip(this,'on-red')">"Es muy caro"</button>
             <button class="chip" onclick="toggleChip(this,'on-red')">"No tengo tiempo"</button>
@@ -343,10 +358,12 @@ select option { background: var(--card); }
       <div class="form-grid full">
         <div class="field">
           <label>Propuesta de valor (¿qué resultado, en cuánto tiempo, cómo?)</label>
+          <div class="field-hint">Resultado + plazo + método, en una frase. Sin esto, tu guión de venta no tiene ancla.</div>
           <textarea id="f_propuesta" placeholder='Ej: "Te ayudo a bajar 3-6 kg en 12-16 semanas entrenando 30 min, 3 veces por semana, sin dietas extremas"' oninput="updateProgress()"></textarea>
         </div>
         <div class="field">
           <label>Frase gancho para redes sociales</label>
+          <div class="field-hint">La primera línea que detiene el scroll. Debe sonar a él/ella, no a ti.</div>
           <input type="text" id="f_gancho" placeholder='Ej: "Si quieres dejar de sentirte cansado e incómodo con tu cuerpo, yo te puedo ayudar"' oninput="updateProgress()">
         </div>
       </div>
