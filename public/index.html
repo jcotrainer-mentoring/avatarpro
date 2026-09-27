@@ -617,7 +617,7 @@ FORMATO (obligatorio):
 - Para títulos de sección usa MAYÚSCULAS en su propia línea. Para destacar algo, usa mayúsculas o una buena redacción, nunca asteriscos.
 - Para listas usa el símbolo • al inicio de cada punto.
 - Separa bloques con una línea en blanco.
-- Los hashtags sí llevan # (por ejemplo #EntrenadorPersonal).
+- Usa hashtags SOLO en el post de Instagram. En cualquier otro texto no pongas hashtags.
 - Extensión máxima: 450 palabras. Sé concreto y no te cortes a mitad de frase.`;
 
   try {
@@ -667,6 +667,7 @@ ${avatarDesc}`);
 FASE 1 (0-3 min): Apertura — palabras exactas para romper el hielo y bajar la guardia
 FASE 2 (3-10 min): Diagnóstico — las 5 preguntas en orden, cada una con una nota táctica corta. En la pregunta 5, indica cuándo callar y escuchar.
 
+Empieza directamente con "FASE 1: APERTURA", sin título general ni menciones a "primera mitad".
 Escribe frases exactas que el entrenador pueda decir textualmente. Sé concreto y breve.
 
 ${avatarDesc}`);
@@ -677,9 +678,13 @@ FASE 4 (15-20 min): Cierre — pregunta de cierre suave, silencio, fecha concret
 
 Termina con las respuestas a sus 3 objeciones principales, con frases exactas.
 Incluye una nota táctica corta en cada fase. Sé concreto y breve.
+Empieza directamente con "FASE 3: PRESENTACIÓN", sin título general ni menciones a "segunda mitad".
 
 ${avatarDesc}`);
-    document.getElementById('res_guion').textContent = guionA + '\n\n' + guionB;
+    document.getElementById('res_guion').textContent = (guionA + '\n\n' + guionB)
+      .replace(/^.*\b(PRIMERA|SEGUNDA) MITAD\b.*$/gim, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
 
     animateStep(6);
 
