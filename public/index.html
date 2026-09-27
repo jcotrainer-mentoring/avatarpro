@@ -545,6 +545,19 @@ function buildAvatarData() {
   };
 }
 
+// Quita restos de formato markdown (**, *, ###, ---) para que el texto se vea limpio.
+// Los hashtags (#Palabra) no se tocan.
+function cleanText(t) {
+  return String(t)
+    .replace(/^\s*(-{3,}|_{3,}|\*{3,})\s*$/gm, '')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^\s*[*-]\s+/gm, '• ')
+    .replace(/\*\*(.+?)\*\*/gs, '$1')
+    .replace(/(^|[^\w*])\*(?!\s)(.+?)\*(?=[^\w*]|$)/gm, '$1$2')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 async function callClaude(systemPrompt, userPrompt) {
   const res = await fetch('/api/claude', {
     method: 'POST',
@@ -557,7 +570,10 @@ async function callClaude(systemPrompt, userPrompt) {
     })
   });
   const data = await res.json();
-  return data.content[0].text;
+  if (!data.content || !data.content[0]) {
+    throw new Error(data.error || 'La IA no devolvió una respuesta válida.');
+  }
+  return cleanText(data.content[0].text);
 }
 
 function animateStep(i) {
@@ -594,7 +610,15 @@ AVATAR DE CLIENTE IDEAL:
 Escribes en español, con voz directa, emocional y auténtica.
 Usa SIEMPRE las palabras exactas del avatar, no jerga técnica.
 El resultado emocional siempre es más poderoso que el físico.
-Responde SOLO con el contenido pedido, sin introducciones ni explicaciones.`;
+Responde SOLO con el contenido pedido, sin introducciones ni explicaciones.
+
+FORMATO (obligatorio):
+- Escribe en texto plano. NO uses markdown: nada de asteriscos (* o **), nada de # para títulos, nada de líneas de guiones (---).
+- Para títulos de sección usa MAYÚSCULAS en su propia línea. Para destacar algo, usa mayúsculas o una buena redacción, nunca asteriscos.
+- Para listas usa el símbolo • al inicio de cada punto.
+- Separa bloques con una línea en blanco.
+- Los hashtags sí llevan # (por ejemplo #EntrenadorPersonal).
+- Extensión máxima: 450 palabras. Sé concreto y no te cortes a mitad de frase.`;
 
   try {
     animateStep(1); await new Promise(r=>setTimeout(r,600));
@@ -638,18 +662,24 @@ ${avatarDesc}`);
     document.getElementById('res_prop').textContent = prop;
 
     animateStep(5);
-    const guion = await callClaude(sys, `Crea un guión de llamada de venta de 20 minutos para este avatar con las 4 fases:
+    const guionA = await callClaude(sys, `Crea la PRIMERA MITAD de un guión de llamada de venta de 20 minutos para este avatar:
 
 FASE 1 (0-3 min): Apertura — palabras exactas para romper el hielo y bajar la guardia
-FASE 2 (3-10 min): Diagnóstico — las 5 preguntas en orden con nota sobre la pregunta 5
+FASE 2 (3-10 min): Diagnóstico — las 5 preguntas en orden, cada una con una nota táctica corta. En la pregunta 5, indica cuándo callar y escuchar.
+
+Escribe frases exactas que el entrenador pueda decir textualmente. Sé concreto y breve.
+
+${avatarDesc}`);
+    const guionB = await callClaude(sys, `Crea la SEGUNDA MITAD de un guión de llamada de venta de 20 minutos para este avatar:
+
 FASE 3 (10-15 min): Presentación — cómo conectar el programa exactamente con su situación
 FASE 4 (15-20 min): Cierre — pregunta de cierre suave, silencio, fecha concreta
 
-Más respuestas a sus 3 objeciones principales con frases exactas.
-Incluye notas tácticas en cada fase.
+Termina con las respuestas a sus 3 objeciones principales, con frases exactas.
+Incluye una nota táctica corta en cada fase. Sé concreto y breve.
 
 ${avatarDesc}`);
-    document.getElementById('res_guion').textContent = guion;
+    document.getElementById('res_guion').textContent = guionA + '\n\n' + guionB;
 
     animateStep(6);
 
