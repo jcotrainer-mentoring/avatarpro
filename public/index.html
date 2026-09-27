@@ -416,11 +416,11 @@ select option { background: var(--card); }
     </div>
 
     <div class="save-section">
-      <div class="save-title">Guardar en Google Drive</div>
-      <div class="save-sub">Ingresa tu correo de Google para guardar el kit completo en tu Drive. El propietario del sistema te dará acceso al archivo.</div>
+      <div class="save-title">Guardar tu kit</div>
+      <div class="save-sub">Copia todo el contenido o descárgalo como archivo de texto para compartirlo como quieras.</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;">
-        <input type="email" id="emailInput" placeholder="tucorreo@gmail.com" style="max-width:300px;flex:1;" oninput="document.getElementById('saveError').style.display='none'">
-        <button class="btn btn-green" onclick="saveToNotion()" id="btnSave">Guardar en Drive</button>
+        <button class="btn btn-green" onclick="copyAllContent()" id="btnCopyAll">📋 Copiar todo</button>
+        <button class="btn btn-green" onclick="downloadAsTxt()" id="btnDownload">💾 Descargar como .txt</button>
       </div>
       <div class="save-status" id="saveStatus"></div>
       <div class="error-box" id="saveError"></div>
@@ -664,32 +664,16 @@ ${avatarDesc}`);
   }
 }
 
-// ── SAVE TO DRIVE (via Claude API) ────────────────────────────────
-async function saveToNotion() {
-  const email = document.getElementById('emailInput').value.trim();
-  const errEl = document.getElementById('saveError');
-  const statusEl = document.getElementById('saveStatus');
-  errEl.style.display = 'none';
-
-  if (!email || !email.includes('@')) {
-    errEl.textContent = 'Ingresa un correo válido.';
-    errEl.style.display = 'block';
-    return;
-  }
-
-  const btn = document.getElementById('btnSave');
-  btn.disabled = true;
-  btn.textContent = 'Guardando...';
-
+// ── Construir el contenido del kit como texto plano ────────────────
+function buildKitContent() {
   const av = buildAvatarData();
   const post = document.getElementById('res_post').innerText;
   const hist = document.getElementById('res_hist').innerText;
   const prop = document.getElementById('res_prop').innerText;
   const guion = document.getElementById('res_guion').innerText;
 
-  const contenido = `SISTEMA DE MARKETING — AVATAR GENERADO CON IA
+  return `SISTEMA DE MARKETING — AVATAR GENERADO CON IA
 ============================================================
-Correo del entrenador: ${email}
 Fecha: ${new Date().toLocaleDateString('es-CL')}
 ============================================================
 
@@ -732,44 +716,53 @@ ${prop}
 
 ${guion}
 `;
+}
+
+// ── Copiar todo al portapapeles ────────────────────────────────────
+async function copyAllContent() {
+  const errEl = document.getElementById('saveError');
+  const statusEl = document.getElementById('saveStatus');
+  errEl.style.display = 'none';
+  statusEl.style.display = 'none';
+
+  const contenido = buildKitContent();
 
   try {
-    const res = await fetch('/api/claude', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        mcp_servers: [{ type: 'url', url: 'https://drivemcp.googleapis.com/mcp/v1', name: 'gdrive' }],
-        messages: [{
-          role: 'user',
-          content: `Crea un Google Doc en Drive con el título "Kit de Marketing — ${av.nombre} — ${email}" y el siguiente contenido exacto:\n\n${contenido}\n\nSolo crea el archivo y confirma con el ID o URL del documento creado.`
-        }]
-      })
-    });
-
-    const data = await res.json();
-    const text = data.content.filter(b=>b.type==='text').map(b=>b.text).join(' ');
-    const toolResults = data.content.filter(b=>b.type==='mcp_tool_result');
-    let fileUrl = '';
-    toolResults.forEach(r => {
-      try {
-        const parsed = JSON.parse(r.content?.[0]?.text || '{}');
-        if (parsed.viewUrl) fileUrl = parsed.viewUrl;
-      } catch(e) {}
-    });
-
-    btn.disabled = false;
-    btn.textContent = 'Guardar en Drive';
+    await navigator.clipboard.writeText(contenido);
     statusEl.style.display = 'block';
-    statusEl.innerHTML = fileUrl
-      ? `✓ Guardado en Drive. <a href="${fileUrl}" target="_blank" style="color:var(--accent2);text-decoration:underline;">Abrir documento →</a><br><span style="color:var(--muted);font-size:12px;">Comparte el acceso con ${email} desde Google Drive.</span>`
-      : `✓ Guardado en Drive. Busca "Kit de Marketing — ${av.nombre}" en tu Drive y compártelo con ${email}.`;
+    statusEl.innerHTML = '✓ Kit copiado al portapapeles. Ya puedes pegarlo donde quieras.';
+  } catch (e) {
+    errEl.textContent = 'No se pudo copiar automáticamente. Selecciona y copia el texto manualmente desde las pestañas de arriba.';
+    errEl.style.display = 'block';
+  }
+}
 
-  } catch(e) {
-    btn.disabled = false;
-    btn.textContent = 'Guardar en Drive';
-    errEl.textContent = 'Error al guardar: ' + e.message + '. Copia el contenido manualmente.';
+// ── Descargar como archivo .txt ─────────────────────────────────────
+function downloadAsTxt() {
+  const errEl = document.getElementById('saveError');
+  const statusEl = document.getElementById('saveStatus');
+  errEl.style.display = 'none';
+  statusEl.style.display = 'none';
+
+  const av = buildAvatarData();
+  const contenido = buildKitContent();
+
+  try {
+    const blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const nombreArchivo = (av.nombre || 'avatar').replace(/[^a-z0-9áéíóúñ]/gi, '_');
+    a.href = url;
+    a.download = `Kit-Marketing-${nombreArchivo}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    statusEl.style.display = 'block';
+    statusEl.innerHTML = '✓ Archivo descargado.';
+  } catch (e) {
+    errEl.textContent = 'No se pudo descargar el archivo: ' + e.message;
     errEl.style.display = 'block';
   }
 }
