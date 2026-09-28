@@ -152,9 +152,31 @@ select option { background: var(--card); }
   .steps { flex-wrap: wrap; gap: 8px; }
   .step-line { display: none; }
 }
+
+/* GATE (clave de acceso) */
+#gate { position: fixed; inset: 0; z-index: 1000; background: var(--bg); display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+#gate.hidden { display: none; }
+.gate-card { width: 100%; max-width: 380px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; text-align: center; }
+.gate-icon { font-size: 28px; margin-bottom: 12px; }
+.gate-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+.gate-sub { color: var(--muted); font-size: 14px; margin-bottom: 1.25rem; }
+.gate-card input { text-align: center; margin-bottom: 12px; }
+.gate-card .btn { width: 100%; justify-content: center; }
 </style>
 </head>
 <body>
+
+<div id="gate">
+  <div class="gate-card">
+    <div class="gate-icon">🔒</div>
+    <div class="gate-title">Acceso exclusivo para mentoreados</div>
+    <div class="gate-sub">Ingresa la clave que te entregó JCOTRAINER.</div>
+    <input type="password" id="gateInput" placeholder="Tu clave de acceso" autocomplete="off" onkeydown="if(event.key==='Enter') submitGate()">
+    <button class="btn btn-primary" id="gateBtn" onclick="submitGate()">Entrar</button>
+    <div class="error-box" id="gateError"></div>
+  </div>
+</div>
+
 
 <div class="header">
   <div class="logo">avatar<span>.</span>pro</div>
@@ -558,10 +580,75 @@ function cleanText(t) {
     .trim();
 }
 
+// ── CLAVE DE ACCESO ────────────────────────────────────────────────
+const CODE_KEY = 'avatarpro_access_code';
+
+function getStoredCode() {
+  try { return localStorage.getItem(CODE_KEY) || ''; } catch (e) { return ''; }
+}
+function storeCode(code) {
+  try { localStorage.setItem(CODE_KEY, code); } catch (e) {}
+}
+function clearCode() {
+  try { localStorage.removeItem(CODE_KEY); } catch (e) {}
+}
+function showGate(msg) {
+  document.getElementById('gate').classList.remove('hidden');
+  const err = document.getElementById('gateError');
+  if (msg) { err.textContent = msg; err.style.display = 'block'; }
+  else { err.style.display = 'none'; }
+}
+function hideGate() {
+  document.getElementById('gate').classList.add('hidden');
+}
+
+// Pregunta al servidor si la clave es válida (no consume la API de Anthropic)
+async function verifyCode(code) {
+  const res = await fetch('/api/claude', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-access-code': code },
+    body: JSON.stringify({ check: true })
+  });
+  if (res.status === 401) return { ok: false, reason: 'invalid' };
+  if (!res.ok) return { ok: false, reason: 'error' };
+  return { ok: true };
+}
+
+async function submitGate() {
+  const input = document.getElementById('gateInput');
+  const btn = document.getElementById('gateBtn');
+  const code = input.value.trim();
+  if (!code) { showGate('Ingresa tu clave de acceso.'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Verificando...';
+  try {
+    const r = await verifyCode(code);
+    if (r.ok) { storeCode(code); input.value = ''; hideGate(); }
+    else if (r.reason === 'invalid') { showGate('Clave incorrecta. Revisa que esté bien escrita.'); }
+    else { showGate('No se pudo verificar la clave. Intenta de nuevo en unos minutos.'); }
+  } catch (e) {
+    showGate('Error de conexión. Revisa tu internet e intenta de nuevo.');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Entrar';
+}
+
+// Al cargar: si ya hay una clave guardada, se verifica en silencio
+(async function initGate() {
+  const saved = getStoredCode();
+  if (!saved) return;
+  try {
+    const r = await verifyCode(saved);
+    if (r.ok) { hideGate(); }
+    else if (r.reason === 'invalid') { clearCode(); }
+  } catch (e) {}
+})();
+
 async function callClaude(systemPrompt, userPrompt) {
   const res = await fetch('/api/claude', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-access-code': getStoredCode() },
     body: JSON.stringify({
       model: 'claude-sonnet-4-6',
       max_tokens: 1000,
@@ -569,6 +656,11 @@ async function callClaude(systemPrompt, userPrompt) {
       messages: [{ role: 'user', content: userPrompt }]
     })
   });
+  if (res.status === 401) {
+    clearCode();
+    showGate('Tu clave ya no es válida. Ingresa una nueva.');
+    throw new Error('Clave de acceso inválida o revocada.');
+  }
   const data = await res.json();
   if (!data.content || !data.content[0]) {
     throw new Error(data.error || 'La IA no devolvió una respuesta válida.');
