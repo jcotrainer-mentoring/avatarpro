@@ -3,22 +3,29 @@
  * Avatar Pro — JCOTRAINER
  *
  * Proxy serverless que mantiene la API key de Anthropic en el servidor.
- * El frontend NUNCA ve la key. Soporta CORS para el dominio de Netlify.
+ * El frontend NUNCA ve la key. Además exige una clave de acceso
+ * (variable de entorno ACCESS_CODES) para poder usarlo.
+ *
+ * Variables de entorno en Netlify:
+ *   ANTHROPIC_API_KEY  → tu API key de Anthropic
+ *   ACCESS_CODES       → una o varias claves separadas por coma
+ *                        (ejemplo: clave-ana-8x2k,clave-luis-7m4p)
  */
 
-exports.handler = async (event) => {
-  // ── Solo POST ──────────────────────────────────────────────────────
-  if (event.httpMethod !== "POST") {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: "Method not allowed" }),
-    };
-  }
+const crypto = require("crypto");
 
+// Compara dos textos sin filtrar información por tiempos de respuesta
+function safeEqual(a, b) {
+  const ha = crypto.createHash("sha256").update(a).digest();
+  const hb = crypto.createHash("sha256").update(b).digest();
+  return crypto.timingSafeEqual(ha, hb);
+}
+
+exports.handler = async (event) => {
   // ── CORS headers ───────────────────────────────────────────────────
   const headers = {
     "Access-Control-Allow-Origin": "*",          // en producción cambia a tu dominio
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, x-access-code",
     "Content-Type": "application/json",
   };
 
@@ -27,13 +34,40 @@ exports.handler = async (event) => {
     return { statusCode: 204, headers, body: "" };
   }
 
-  // ── Validar API key configurada ────────────────────────────────────
-  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-  if (!ANTHROPIC_API_KEY) {
+  // ── Solo POST ──────────────────────────────────────────────────────
+  if (event.httpMethod !== "POST") {
+    return {
+      statusCode: 405,
+      headers,
+      body: JSON.stringify({ error: "Method not allowed" }),
+    };
+  }
+
+  // ── Claves de acceso configuradas ──────────────────────────────────
+  const validCodes = (process.env.ACCESS_CODES || "")
+    .split(",")
+    .map((c) => c.trim())
+    .filter(Boolean);
+
+  if (validCodes.length === 0) {
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: "ANTHROPIC_API_KEY no configurada en variables de entorno." }),
+      body: JSON.stringify({ error: "ACCESS_CODES no configurada en variables de entorno." }),
+    };
+  }
+
+  // ── Validar la clave enviada por el navegador ──────────────────────
+  const provided = (event.headers["x-access-code"] || "").trim();
+  const authorized =
+    provided !== "" && validCodes.some((code) => safeEqual(code, provided));
+
+  if (!authorized) {
+    await new Promise((resolve) => setTimeout(resolve, 800)); // frena intentos repetidos
+    return {
+      statusCode: 401,
+      headers,
+      body: JSON.stringify({ error: "Clave de acceso inválida." }),
     };
   }
 
@@ -46,6 +80,25 @@ exports.handler = async (event) => {
       statusCode: 400,
       headers,
       body: JSON.stringify({ error: "Body inválido — se esperaba JSON." }),
+    };
+  }
+
+  // ── Solo verificar la clave (no llama a Anthropic, no cuesta nada) ─
+  if (payload && payload.check === true) {
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ ok: true }),
+    };
+  }
+
+  // ── Validar API key de Anthropic configurada ───────────────────────
+  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+  if (!ANTHROPIC_API_KEY) {
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: "ANTHROPIC_API_KEY no configurada en variables de entorno." }),
     };
   }
 
