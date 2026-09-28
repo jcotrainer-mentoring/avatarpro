@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema Avatar — Entrenadores Personales</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --card: #1a1a26;
+  --border: #2a2a3d;
+  --border-light: #3a3a55;
+  --accent: #7c6fff;
+  --accent2: #4fffb0;
+  --accent3: #ff6b8a;
+  --text: #f0f0ff;
+  --muted: #8888aa;
+  --dim: #4a4a66;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 15px; line-height: 1.6; min-height: 100vh; }
+
+/* HEADER */
+.header { padding: 2rem 2rem 1rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+.logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; color: var(--text); letter-spacing: -0.5px; }
+.logo span { color: var(--accent); }
+.badge { font-size: 11px; background: rgba(124,111,255,0.15); color: var(--accent); border: 1px solid rgba(124,111,255,0.3); border-radius: 20px; padding: 4px 12px; font-weight: 500; }
+
+/* MAIN */
+.main { max-width: 900px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+/* STEP INDICATOR */
+.steps { display: flex; align-items: center; gap: 0; margin-bottom: 2.5rem; }
+.step { display: flex; align-items: center; gap: 8px; }
+.step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; font-family: 'Syne', sans-serif; flex-shrink: 0; transition: all 0.3s; }
+.step-dot.done { background: var(--accent2); color: #0a0a0f; }
+.step-dot.active { background: var(--accent); color: #fff; box-shadow: 0 0 16px rgba(124,111,255,0.5); }
+.step-dot.pending { background: var(--border); color: var(--muted); }
+.step-label { font-size: 12px; color: var(--muted); font-weight: 500; white-space: nowrap; }
+.step-label.active { color: var(--text); }
+.step-line { flex: 1; height: 1px; background: var(--border); margin: 0 10px; min-width: 20px; }
+
+/* SECTION TITLE */
+.section-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.5px; }
+.section-sub { color: var(--muted); font-size: 14px; margin-bottom: 2rem; }
+
+/* FORM */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-grid.full { grid-template-columns: 1fr; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field-hint { font-size: 12px; font-weight: 400; text-transform: none; letter-spacing: normal; color: var(--muted); opacity: 0.8; margin-top: -2px; margin-bottom: 2px; line-height: 1.4; }
+.field.span2 { grid-column: span 2; }
+label { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+input, select, textarea {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  padding: 10px 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,111,255,0.15); }
+textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+select option { background: var(--card); }
+
+/* CHIPS */
+.chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 4px; }
+.chip { font-size: 12px; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: all 0.15s; background: transparent; font-family: 'Inter', sans-serif; }
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+.chip.on { background: rgba(124,111,255,0.15); border-color: var(--accent); color: var(--accent); }
+.chip.on-green { background: rgba(79,255,176,0.12); border-color: var(--accent2); color: var(--accent2); }
+.chip.on-red { background: rgba(255,107,138,0.12); border-color: var(--accent3); color: var(--accent3); }
+
+/* SECTION CARD */
+.scard { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.25rem; }
+.scard-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.scard-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.scard-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 600; }
+.scard-desc { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+/* PROGRESS BAR */
+.progress-wrap { margin-bottom: 1.5rem; }
+.progress-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.progress-track { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; transition: width 0.4s ease; width: 0%; }
+
+/* BUTTONS */
+.btn { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 14px; padding: 12px 24px; border-radius: var(--radius-sm); border: none; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #9080ff; box-shadow: 0 0 20px rgba(124,111,255,0.4); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.btn-ghost:hover { border-color: var(--border-light); color: var(--text); }
+.btn-green { background: var(--accent2); color: #0a0a0f; }
+.btn-green:hover { background: #30ffaa; }
+.btn-row { display: flex; gap: 10px; align-items: center; margin-top: 2rem; flex-wrap: wrap; }
+
+/* PANELS */
+.panel { display: none; }
+.panel.show { display: block; }
+
+/* GENERATING */
+.gen-wrap { text-align: center; padding: 3rem 2rem; }
+.gen-spinner { width: 48px; height: 48px; border-radius: 50%; border: 3px solid var(--border); border-top-color: var(--accent); animation: spin 0.8s linear infinite; margin: 0 auto 1.5rem; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.gen-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.gen-sub { color: var(--muted); font-size: 14px; }
+.gen-steps { display: flex; flex-direction: column; gap: 8px; margin-top: 1.5rem; max-width: 360px; margin-left: auto; margin-right: auto; }
+.gen-step { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); padding: 8px 14px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); transition: all 0.3s; }
+.gen-step.active { color: var(--text); border-color: var(--accent); background: rgba(124,111,255,0.08); }
+.gen-step.done { color: var(--accent2); border-color: rgba(79,255,176,0.3); }
+.gen-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex-shrink: 0; transition: all 0.3s; }
+.gen-step.active .gen-dot { background: var(--accent); box-shadow: 0 0 8px rgba(124,111,255,0.6); animation: pulse 1s infinite; }
+.gen-step.done .gen-dot { background: var(--accent2); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* RESULT */
+.result-tabs { display: flex; gap: 6px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.rtab { font-size: 12px; font-weight: 500; padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: all 0.15s; background: transparent; font-family: 'Inter', sans-serif; }
+.rtab.active { background: rgba(124,111,255,0.15); border-color: var(--accent); color: var(--accent); }
+.rpanel { display: none; }
+.rpanel.show { display: block; }
+.result-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1rem; position: relative; }
+.result-box-label { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+.result-text { font-size: 14px; color: var(--text); line-height: 1.85; white-space: pre-wrap; }
+.copy-btn { font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); color: var(--muted); cursor: pointer; background: transparent; font-family: 'Inter', sans-serif; transition: all 0.15s; }
+.copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+.avatar-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+.av-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; }
+.av-label { font-size: 10px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+.av-val { font-size: 13px; color: var(--text); }
+.save-section { background: rgba(79,255,176,0.07); border: 1px solid rgba(79,255,176,0.2); border-radius: var(--radius); padding: 1.5rem; margin-top: 1.5rem; }
+.save-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 600; color: var(--accent2); margin-bottom: 6px; }
+.save-sub { font-size: 13px; color: var(--muted); margin-bottom: 1rem; }
+.save-status { font-size: 13px; color: var(--accent2); margin-top: 10px; display: none; }
+.error-box { background: rgba(255,107,138,0.08); border: 1px solid rgba(255,107,138,0.25); border-radius: var(--radius-sm); padding: 12px 16px; font-size: 13px; color: var(--accent3); margin-top: 10px; display: none; }
+
+/* HIGHLIGHT QUOTE */
+.highlight { background: rgba(124,111,255,0.08); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 14px; color: var(--text); line-height: 1.7; margin: 10px 0; font-style: italic; }
+
+@media (max-width: 600px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .field.span2 { grid-column: span 1; }
+  .steps { flex-wrap: wrap; gap: 8px; }
+  .step-line { display: none; }
+}
+
+/* GATE (clave de acceso) */
+#gate { position: fixed; inset: 0; z-index: 1000; background: var(--bg); display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+#gate.hidden { display: none; }
+.gate-card { width: 100%; max-width: 380px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; text-align: center; }
+.gate-icon { font-size: 28px; margin-bottom: 12px; }
+.gate-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+.gate-sub { color: var(--muted); font-size: 14px; margin-bottom: 1.25rem; }
+.gate-card input { text-align: center; margin-bottom: 12px; }
+.gate-card .btn { width: 100%; justify-content: center; }
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="gate-card">
+    <div class="gate-icon">🔒</div>
+    <div class="gate-title">Acceso exclusivo para mentoreados</div>
+    <div class="gate-sub">Ingresa la clave que te entregó JCOTRAINER.</div>
+    <input type="password" id="gateInput" placeholder="Tu clave de acceso" autocomplete="off" onkeydown="if(event.key==='Enter') submitGate()">
+    <button class="btn btn-primary" id="gateBtn" onclick="submitGate()">Entrar</button>
+    <div class="error-box" id="gateError"></div>
+  </div>
+</div>
+
+
+<div class="header">
+  <div class="logo">avatar<span>.</span>pro</div>
+  <div class="badge">Para entrenadores personales</div>
+</div>
+
+<div class="main">
+
+  <!-- STEP INDICATOR -->
+  <div class="steps" id="stepBar">
+    <div class="step">
+      <div class="step-dot active" id="dot1">1</div>
+      <div class="step-label active" id="lbl1">Diseña tu avatar</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step">
+      <div class="step-dot pending" id="dot2">2</div>
+      <div class="step-label" id="lbl2">Generando con IA</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step">
+      <div class="step-dot pending" id="dot3">3</div>
+      <div class="step-label" id="lbl3">Kit de marketing listo</div>
+    </div>
+  </div>
+
+  <!-- PANEL 1: FORMULARIO -->
+  <div class="panel show" id="panelForm">
+    <div class="section-title">Diseña tu cliente ideal</div>
+    <div class="section-sub">Completa los campos clave. La IA usará estos datos para generar todo tu kit de marketing.</div>
+
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Progreso del formulario</span><span id="pct">0%</span></div>
+      <div class="progress-track"><div class="progress-fill" id="progressBar"></div></div>
+    </div>
+
+    <!-- S1: PERFIL -->
+    <div class="scard">
+      <div class="scard-header">
+        <div class="scard-icon" style="background:rgba(124,111,255,0.15);color:var(--accent);">👤</div>
+        <div><div class="scard-title">Perfil demográfico</div><div class="scard-desc">¿Quién es tu cliente a nivel básico?</div></div>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Nombre ficticio del avatar</label>
+          <div class="field-hint">Ponle nombre y apellido, como si fuera un cliente real. Un avatar sin nombre se queda en la teoría.</div>
+          <input type="text" id="f_nombre" placeholder='Ej: "Roberto el oficinista"' oninput="updateProgress()">
+        </div>
+        <div class="field">
+          <label>Género</label>
+          <div class="field-hint">Define uno. Un avatar que le habla a "todos" no le habla a nadie.</div>
+          <select id="f_genero" onchange="updateProgress()">
+            <option value="">Seleccionar...</option>
+            <option>Hombre</option><option>Mujer</option><option>Cualquier género</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Rango de edad</label>
+          <div class="field-hint">Máximo 10-15 años de rango. Mientras más acotado, más preciso el mensaje.</div>
+          <input type="text" id="f_edad" placeholder="Ej: 30 a 45 años" oninput="updateProgress()">
+        </div>
+        <div class="field">
+          <label>Ocupación</label>
+          <div class="field-hint">No pongas "profesional". Sé específico: el tipo de trabajo cambia sus horarios, su energía y sus excusas.</div>
+          <input type="text" id="f_ocup" placeholder="Ej: Ejecutivo, mamá, emprendedor..." oninput="updateProgress()">
+        </div>
+        <div class="field">
+          <label>Ciudad / Zona</label>
+          <div class="field-hint">Si entrenas presencial, esto define tu radio real de clientes. Si es online, define códigos culturales del mensaje.</div>
+          <input type="text" id="f_ciudad" placeholder="Ej: Santiago, Providencia..." oninput="updateProgress()">
+        </div>
+        <div class="field">
+          <label>Nivel de ingresos</label>
+          <div class="field-hint">Esto define lo que puede pagar y qué objeciones de precio vas a enfrentar. No lo saltes.</div>
+          <select id="f_ingresos" onchange="updateProgress()">
+            <option value="">Seleccionar...</option>
+            <option>Bajo (menos de $500.000)</option>
+            <option>Medio ($500.000 – $1.500.000)</option>
+            <option>Medio-alto ($1.500.000 – $3.000.000)</option>
+            <option>Alto (más de $3.000.000)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- S2: DOLOR -->
+    <div class="scard">
+      <div class="scard-header">
+        <div class="scard-icon" style="background:rgba(255,107,138,0.15);color:var(--accent3);">⚡</div>
+        <div><div class="scard-title">Dolor principal y frustraciones</div><div class="scard-desc">Lo más importante del formulario — sé específico</div></div>
+      </div>
+      <div class="form-grid full">
+        <div class="field">
+          <label>Dolor principal (en palabras de tu cliente, no tuyas)</label>
+          <div class="field-hint">Cópialo textual de una conversación real, un mensaje de WhatsApp o un comentario que te hayan dicho. Nunca lo redactes tú — pierde autenticidad.</div>
+          <textarea id="f_dolor" placeholder='Ej: "Llevo 3 años intentando bajar de peso, lo intento y lo dejo, llego agotado del trabajo y no tengo energía para nada..."' oninput="updateProgress()"></textarea>
+        </div>
+        <div class="field">
+          <label>Frustraciones más comunes (selecciona todas las que aplican)</label>
+          <div class="field-hint">Marca solo las que hayas escuchado de verdad, no las que "crees" que aplican.</div>
+          <div class="chips" id="c_frust">
+            <button class="chip" onclick="toggleChip(this,'on-red')">Dietas que no duran</button>
+            <button class="chip" onclick="toggleChip(this,'on-red')">Resultados lentos</button>
+            <button class="chip" onclick="toggleChip(this,'on-red')">Falta de tiempo</button>
+            <button class="chip" onclick="toggleChip(this,'on-red')">Falta de motivación</button>
+            <button class="chip" onclick="toggleChip(this,'on-red')">Rebote de peso</button>
+            <button class="chip" onclick="toggleChip(this,'on-red')">Lesiones recurrentes</button>
+            <button class="chip" onclick="toggleChip(this,'on-red')">No sabe qué hacer</button>
+            <button class="chip" onclick="toggleChip(this,'on-red')">Come mal por estrés</button>
+            <button class="chip" onclick="toggleChip(this,'on-red')">Planes genéricos</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>¿Qué intentó antes que NO funcionó?</label>
+          <div class="field-hint">Esto es oro: te dice qué NO repetir en tu propuesta y qué objeción viene preparada.</div>
+          <input type="text" id="f_intento" placeholder="Ej: Gimnasio 3 meses, dieta keto, app de entrenamiento..." oninput="updateProgress()">
+        </div>
+      </div>
+    </div>
+
+    <!-- S3: SUEÑOS -->
+    <div class="scard">
+      <div class="scard-header">
+        <div class="scard-icon" style="background:rgba(79,255,176,0.12);color:var(--accent2);">✦</div>
+        <div><div class="scard-title">Sueños y resultado deseado</div><div class="scard-desc">Más allá del número en la balanza</div></div>
+      </div>
+      <div class="form-grid full">
+        <div class="field">
+          <label>Su gran sueño o meta principal</label>
+          <div class="field-hint">Ve más allá del físico. ¿Qué cambia en su vida diaria cuando lo logra?</div>
+          <textarea id="f_sueno" placeholder='Ej: Verse sin camiseta en verano, tener energía para jugar con sus hijos, sentirse seguro en una reunión de trabajo...' oninput="updateProgress()"></textarea>
+        </div>
+        <div class="field">
+          <label>Resultado emocional que realmente busca</label>
+          <div class="field-hint">Nadie compra "bajar de peso". Compra sentirse seguro, respetado, con energía. Nombra la emoción.</div>
+          <div class="chips" id="c_emoc">
+            <button class="chip" onclick="toggleChip(this,'on-green')">Confianza</button>
+            <button class="chip" onclick="toggleChip(this,'on-green')">Energía</button>
+            <button class="chip" onclick="toggleChip(this,'on-green')">Control</button>
+            <button class="chip" onclick="toggleChip(this,'on-green')">Admiración</button>
+            <button class="chip" onclick="toggleChip(this,'on-green')">Tranquilidad</button>
+            <button class="chip" onclick="toggleChip(this,'on-green')">Vitalidad</button>
+            <button class="chip" onclick="toggleChip(this,'on-green')">Libertad</button>
+            <button class="chip" onclick="toggleChip(this,'on-green')">Orgullo propio</button>
+            <button class="chip" onclick="toggleChip(this,'on-green')">Salud a largo plazo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- S4: COMPORTAMIENTO -->
+    <div class="scard">
+      <div class="scard-header">
+        <div class="scard-icon" style="background:rgba(124,111,255,0.15);color:var(--accent);">📱</div>
+        <div><div class="scard-title">Comportamiento y objeciones</div><div class="scard-desc">¿Dónde está y qué le impide comprar?</div></div>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Redes sociales que más usa</label>
+          <div class="field-hint">Define dónde vas a publicar el contenido que este kit te va a generar.</div>
+          <div class="chips" id="c_redes">
+            <button class="chip" onclick="toggleChip(this,'on')">Instagram</button>
+            <button class="chip" onclick="toggleChip(this,'on')">TikTok</button>
+            <button class="chip" onclick="toggleChip(this,'on')">YouTube</button>
+            <button class="chip" onclick="toggleChip(this,'on')">Facebook</button>
+            <button class="chip" onclick="toggleChip(this,'on')">LinkedIn</button>
+            <button class="chip" onclick="toggleChip(this,'on')">WhatsApp</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Nivel de condición física actual</label>
+          <div class="field-hint">Ajusta el tono: alguien sedentario necesita otro nivel de empatía que alguien que ya entrena.</div>
+          <div class="chips" id="c_nivel">
+            <button class="chip" onclick="toggleChip(this,'on')">Sedentario</button>
+            <button class="chip" onclick="toggleChip(this,'on')">Principiante</button>
+            <button class="chip" onclick="toggleChip(this,'on')">Intermedio</button>
+            <button class="chip" onclick="toggleChip(this,'on')">Avanzado</button>
+          </div>
+        </div>
+        <div class="field span2">
+          <label>Principales objeciones para contratar</label>
+          <div class="field-hint">Anticipa la objeción antes de que la diga en la llamada de venta.</div>
+          <div class="chips" id="c_obj">
+            <button class="chip" onclick="toggleChip(this,'on-red')">"Es muy caro"</button>
+            <button class="chip" onclick="toggleChip(this,'on-red')">"No tengo tiempo"</button>
+            <button class="chip" onclick="toggleChip(this,'on-red')">"Ya lo intenté"</button>
+            <button class="chip" onclick="toggleChip(this,'on-red')">"Lo hago solo"</button>
+            <button class="chip" onclick="toggleChip(this,'on-red')">"Voy el lunes"</button>
+            <button class="chip" onclick="toggleChip(this,'on-red')">"No es el momento"</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- S5: PROPUESTA -->
+    <div class="scard">
+      <div class="scard-header">
+        <div class="scard-icon" style="background:rgba(79,255,176,0.12);color:var(--accent2);">🎯</div>
+        <div><div class="scard-title">Tu propuesta de valor</div><div class="scard-desc">Lo que ofreces específicamente para este avatar</div></div>
+      </div>
+      <div class="form-grid full">
+        <div class="field">
+          <label>Propuesta de valor (¿qué resultado, en cuánto tiempo, cómo?)</label>
+          <div class="field-hint">Resultado + plazo + método, en una frase. Sin esto, tu guión de venta no tiene ancla.</div>
+          <textarea id="f_propuesta" placeholder='Ej: "Te ayudo a bajar 3-6 kg en 12-16 semanas entrenando 30 min, 3 veces por semana, sin dietas extremas"' oninput="updateProgress()"></textarea>
+        </div>
+        <div class="field">
+          <label>Frase gancho para redes sociales</label>
+          <div class="field-hint">La primera línea que detiene el scroll. Debe sonar a él/ella, no a ti.</div>
+          <input type="text" id="f_gancho" placeholder='Ej: "Si quieres dejar de sentirte cansado e incómodo con tu cuerpo, yo te puedo ayudar"' oninput="updateProgress()">
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnGenerar" onclick="startGeneration()">
+        ✦ Generar kit de marketing con IA
+      </button>
+      <button class="btn btn-ghost" onclick="clearForm()">Limpiar todo</button>
+    </div>
+  </div>
+
+  <!-- PANEL 2: GENERATING -->
+  <div class="panel" id="panelGen">
+    <div class="gen-wrap">
+      <div class="gen-spinner"></div>
+      <div class="gen-title">Generando tu kit de marketing</div>
+      <div class="gen-sub">La IA está analizando tu avatar y creando el contenido personalizado</div>
+      <div class="gen-steps">
+        <div class="gen-step active" id="gs1"><div class="gen-dot"></div>Analizando perfil del avatar</div>
+        <div class="gen-step" id="gs2"><div class="gen-dot"></div>Creando post de Instagram</div>
+        <div class="gen-step" id="gs3"><div class="gen-dot"></div>Escribiendo historia de cliente</div>
+        <div class="gen-step" id="gs4"><div class="gen-dot"></div>Diseñando propuesta de servicio</div>
+        <div class="gen-step" id="gs5"><div class="gen-dot"></div>Armando guión de llamada de venta</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 3: RESULTADO -->
+  <div class="panel" id="panelResult">
+    <div class="section-title">Kit de marketing listo ✦</div>
+    <div class="section-sub">Generado por IA basado en el perfil de tu avatar. Todo listo para usar.</div>
+
+    <div class="avatar-summary" id="avatarSummary"></div>
+
+    <div class="result-tabs">
+      <button class="rtab active" onclick="showRTab(0)">Post Instagram</button>
+      <button class="rtab" onclick="showRTab(1)">Historia de cliente</button>
+      <button class="rtab" onclick="showRTab(2)">Propuesta de servicio</button>
+      <button class="rtab" onclick="showRTab(3)">Guión de llamada</button>
+    </div>
+
+    <div class="rpanel show" id="rt0">
+      <div class="result-box">
+        <div class="result-box-label">Post de Instagram — caption completo <button class="copy-btn" onclick="copyResult('res_post')">Copiar</button></div>
+        <div class="result-text" id="res_post"></div>
+      </div>
+    </div>
+    <div class="rpanel" id="rt1">
+      <div class="result-box">
+        <div class="result-box-label">Historia de cliente <button class="copy-btn" onclick="copyResult('res_hist')">Copiar</button></div>
+        <div class="result-text" id="res_hist"></div>
+      </div>
+    </div>
+    <div class="rpanel" id="rt2">
+      <div class="result-box">
+        <div class="result-box-label">Propuesta de servicio personalizada <button class="copy-btn" onclick="copyResult('res_prop')">Copiar</button></div>
+        <div class="result-text" id="res_prop"></div>
+      </div>
+    </div>
+    <div class="rpanel" id="rt3">
+      <div class="result-box">
+        <div class="result-box-label">Guión de llamada de venta (20 min) <button class="copy-btn" onclick="copyResult('res_guion')">Copiar</button></div>
+        <div class="result-text" id="res_guion"></div>
+      </div>
+    </div>
+
+    <div class="save-section">
+      <div class="save-title">Guardar tu kit</div>
+      <div class="save-sub">Copia todo el contenido o descárgalo como archivo de texto para compartirlo como quieras.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;">
+        <button class="btn btn-green" onclick="copyAllContent()" id="btnCopyAll">📋 Copiar todo</button>
+        <button class="btn btn-green" onclick="downloadAsTxt()" id="btnDownload">💾 Descargar como .txt</button>
+      </div>
+      <div class="save-status" id="saveStatus"></div>
+      <div class="error-box" id="saveError"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="resetAll()">← Crear otro avatar</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── UTILS ──────────────────────────────────────────────────────────
+function toggleChip(el, cls) {
+  const allCls = ['on','on-green','on-red'];
+  const isOn = allCls.some(c => el.classList.contains(c));
+  allCls.forEach(c => el.classList.remove(c));
+  if (!isOn) el.classList.add(cls);
+  updateProgress();
+}
+
+function getChips(id) {
+  return Array.from(document.querySelectorAll(`#${id} .chip`))
+    .filter(c => c.classList.contains('on') || c.classList.contains('on-green') || c.classList.contains('on-red'))
+    .map(c => c.textContent.trim()).join(', ');
+}
+
+function val(id) { return (document.getElementById(id)||{}).value || ''; }
+
+function updateProgress() {
+  const fields = ['f_nombre','f_genero','f_edad','f_ocup','f_ciudad','f_dolor','f_sueno','f_propuesta','f_gancho'];
+  let n = 0;
+  fields.forEach(id => { if (val(id).trim()) n++; });
+  const chips = ['c_frust','c_emoc','c_redes','c_obj'];
+  chips.forEach(id => { if (getChips(id)) n++; });
+  const total = fields.length + chips.length;
+  const pct = Math.round((n / total) * 100);
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('pct').textContent = pct + '%';
+  document.getElementById('btnGenerar').disabled = pct < 30;
+}
+
+function clearForm() {
+  document.querySelectorAll('input[type=text], input[type=email], select, textarea').forEach(el => el.value = '');
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('on','on-green','on-red'));
+  updateProgress();
+}
+
+function setStep(n) {
+  [1,2,3].forEach(i => {
+    const dot = document.getElementById('dot'+i);
+    const lbl = document.getElementById('lbl'+i);
+    dot.className = 'step-dot ' + (i < n ? 'done' : i === n ? 'active' : 'pending');
+    lbl.className = 'step-label' + (i === n ? ' active' : '');
+  });
+}
+
+function showPanel(id) {
+  ['panelForm','panelGen','panelResult'].forEach(p => {
+    document.getElementById(p).classList.remove('show');
+  });
+  document.getElementById(id).classList.add('show');
+}
+
+function showRTab(i) {
+  document.querySelectorAll('.rtab').forEach((t,j) => t.classList.toggle('active', i===j));
+  document.querySelectorAll('.rpanel').forEach((p,j) => p.classList.toggle('show', i===j));
+}
+
+function copyResult(id) {
+  const txt = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(txt).then(() => {
+    const btns = document.querySelectorAll('.copy-btn');
+    btns.forEach(b => { if (b.onclick && b.onclick.toString().includes(id)) { b.textContent = '✓ Copiado'; setTimeout(()=>b.textContent='Copiar',2000); }});
+  });
+}
+
+function resetAll() {
+  clearForm();
+  setStep(1);
+  showPanel('panelForm');
+  updateProgress();
+}
+
+// ── GENERATION ────────────────────────────────────────────────────
+function buildAvatarData() {
+  return {
+    nombre: val('f_nombre') || 'Sin nombre',
+    genero: val('f_genero'),
+    edad: val('f_edad'),
+    ocupacion: val('f_ocup'),
+    ciudad: val('f_ciudad'),
+    ingresos: val('f_ingresos'),
+    dolor: val('f_dolor'),
+    frustraciones: getChips('c_frust'),
+    intento: val('f_intento'),
+    sueno: val('f_sueno'),
+    emociones: getChips('c_emoc'),
+    redes: getChips('c_redes'),
+    nivel: getChips('c_nivel'),
+    objeciones: getChips('c_obj'),
+    propuesta: val('f_propuesta'),
+    gancho: val('f_gancho')
+  };
+}
+
+// Quita restos de formato markdown (**, *, ###, ---) para que el texto se vea limpio.
+// Los hashtags (#Palabra) no se tocan.
+function cleanText(t) {
+  return String(t)
+    .replace(/^\s*(-{3,}|_{3,}|\*{3,})\s*$/gm, '')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^\s*[*-]\s+/gm, '• ')
+    .replace(/\*\*(.+?)\*\*/gs, '$1')
+    .replace(/(^|[^\w*])\*(?!\s)(.+?)\*(?=[^\w*]|$)/gm, '$1$2')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+// ── CLAVE DE ACCESO ────────────────────────────────────────────────
+const CODE_KEY = 'avatarpro_access_code';
+
+function getStoredCode() {
+  try { return localStorage.getItem(CODE_KEY) || ''; } catch (e) { return ''; }
+}
+function storeCode(code) {
+  try { localStorage.setItem(CODE_KEY, code); } catch (e) {}
+}
+function clearCode() {
+  try { localStorage.removeItem(CODE_KEY); } catch (e) {}
+}
+function showGate(msg) {
+  document.getElementById('gate').classList.remove('hidden');
+  const err = document.getElementById('gateError');
+  if (msg) { err.textContent = msg; err.style.display = 'block'; }
+  else { err.style.display = 'none'; }
+}
+function hideGate() {
+  document.getElementById('gate').classList.add('hidden');
+}
+
+// Pregunta al servidor si la clave es válida (no consume la API de Anthropic)
+async function verifyCode(code) {
+  const res = await fetch('/api/claude', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-access-code': code },
+    body: JSON.stringify({ check: true })
+  });
+  if (res.status === 401) return { ok: false, reason: 'invalid' };
+  if (!res.ok) return { ok: false, reason: 'error' };
+  return { ok: true };
+}
+
+async function submitGate() {
+  const input = document.getElementById('gateInput');
+  const btn = document.getElementById('gateBtn');
+  const code = input.value.trim();
+  if (!code) { showGate('Ingresa tu clave de acceso.'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Verificando...';
+  try {
+    const r = await verifyCode(code);
+    if (r.ok) { storeCode(code); input.value = ''; hideGate(); }
+    else if (r.reason === 'invalid') { showGate('Clave incorrecta. Revisa que esté bien escrita.'); }
+    else { showGate('No se pudo verificar la clave. Intenta de nuevo en unos minutos.'); }
+  } catch (e) {
+    showGate('Error de conexión. Revisa tu internet e intenta de nuevo.');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Entrar';
+}
+
+// Al cargar: si ya hay una clave guardada, se verifica en silencio
+(async function initGate() {
+  const saved = getStoredCode();
+  if (!saved) return;
+  try {
+    const r = await verifyCode(saved);
+    if (r.ok) { hideGate(); }
+    else if (r.reason === 'invalid') { clearCode(); }
+  } catch (e) {}
+})();
+
+async function callClaude(systemPrompt, userPrompt) {
+  const res = await fetch('/api/claude', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-access-code': getStoredCode() },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }]
+    })
+  });
+  if (res.status === 401) {
+    clearCode();
+    showGate('Tu clave ya no es válida. Ingresa una nueva.');
+    throw new Error('Clave de acceso inválida o revocada.');
+  }
+  const data = await res.json();
+  if (!data.content || !data.content[0]) {
+    throw new Error(data.error || 'La IA no devolvió una respuesta válida.');
+  }
+  return cleanText(data.content[0].text);
+}
+
+function animateStep(i) {
+  for (let j=1;j<=5;j++) {
+    const el = document.getElementById('gs'+j);
+    if (j < i) { el.className = 'gen-step done'; }
+    else if (j === i) { el.className = 'gen-step active'; }
+    else { el.className = 'gen-step'; }
+  }
+}
+
+async function startGeneration() {
+  const av = buildAvatarData();
+  setStep(2);
+  showPanel('panelGen');
+
+  const avatarDesc = `
+AVATAR DE CLIENTE IDEAL:
+- Nombre: ${av.nombre}
+- Género: ${av.genero} | Edad: ${av.edad}
+- Ocupación: ${av.ocupacion} | Ciudad: ${av.ciudad} | Ingresos: ${av.ingresos}
+- Nivel fitness: ${av.nivel}
+- Dolor principal: ${av.dolor}
+- Frustraciones: ${av.frustraciones}
+- Lo que intentó antes: ${av.intento}
+- Gran sueño/meta: ${av.sueno}
+- Resultado emocional que busca: ${av.emociones}
+- Redes sociales: ${av.redes}
+- Objeciones típicas: ${av.objeciones}
+- Propuesta de valor del entrenador: ${av.propuesta}
+- Frase gancho: ${av.gancho}`;
+
+  const sys = `Eres un experto en marketing para entrenadores personales. 
+Escribes en español, con voz directa, emocional y auténtica.
+Usa SIEMPRE las palabras exactas del avatar, no jerga técnica.
+El resultado emocional siempre es más poderoso que el físico.
+Responde SOLO con el contenido pedido, sin introducciones ni explicaciones.
+
+FORMATO (obligatorio):
+- Escribe en texto plano. NO uses markdown: nada de asteriscos (* o **), nada de # para títulos, nada de líneas de guiones (---).
+- Para títulos de sección usa MAYÚSCULAS en su propia línea. Para destacar algo, usa mayúsculas o una buena redacción, nunca asteriscos.
+- Para listas usa el símbolo • al inicio de cada punto.
+- Separa bloques con una línea en blanco.
+- Usa hashtags SOLO en el post de Instagram. En cualquier otro texto no pongas hashtags.
+- Extensión máxima: 450 palabras. Sé concreto y no te cortes a mitad de frase.`;
+
+  try {
+    animateStep(1); await new Promise(r=>setTimeout(r,600));
+
+    animateStep(2);
+    const post = await callClaude(sys, `Basándote en este avatar, crea un post de Instagram completo con:
+1. Una frase gancho de 2-3 líneas (el pensamiento interno del avatar)
+2. Cuerpo del post con historia de cliente ficticia y resultado
+3. Reflexión que interpela directamente al avatar
+4. CTA con palabra clave al DM
+5. 8 hashtags relevantes
+
+${avatarDesc}
+
+Escribe el post completo listo para publicar.`);
+    document.getElementById('res_post').textContent = post;
+
+    animateStep(3);
+    const hist = await callClaude(sys, `Basándote en este avatar, escribe una historia de cliente completa con los 5 elementos:
+1. Situación inicial (que el avatar reconoce como propia)
+2. Lo que intentó antes y no funcionó
+3. El punto de quiebre
+4. La solución específica (el método del entrenador)
+5. El resultado emocional (entre comillas, en palabras del cliente)
+
+Hazlo narrativo, cálido y real. 3-4 párrafos. Termina con una invitación.
+
+${avatarDesc}`);
+    document.getElementById('res_hist').textContent = hist;
+
+    animateStep(4);
+    const prop = await callClaude(sys, `Crea una propuesta de servicio personalizada para este avatar con:
+- Nombre del programa
+- El problema que resuelves (en sus palabras)
+- Lo que incluye (6 puntos concretos)
+- 3 resultados esperados (físico, energético, emocional)
+- Respuesta a cada una de sus 3 objeciones principales
+- Llamado a la acción
+
+${avatarDesc}`);
+    document.getElementById('res_prop').textContent = prop;
+
+    animateStep(5);
+    const guionA = await callClaude(sys, `Crea la PRIMERA MITAD de un guión de llamada de venta de 20 minutos para este avatar:
+
+FASE 1 (0-3 min): Apertura — palabras exactas para romper el hielo y bajar la guardia
+FASE 2 (3-10 min): Diagnóstico — las 5 preguntas en orden, cada una con una nota táctica corta. En la pregunta 5, indica cuándo callar y escuchar.
+
+Empieza directamente con "FASE 1: APERTURA", sin título general ni menciones a "primera mitad".
+Escribe frases exactas que el entrenador pueda decir textualmente. Sé concreto y breve.
+
+${avatarDesc}`);
+    const guionB = await callClaude(sys, `Crea la SEGUNDA MITAD de un guión de llamada de venta de 20 minutos para este avatar:
+
+FASE 3 (10-15 min): Presentación — cómo conectar el programa exactamente con su situación
+FASE 4 (15-20 min): Cierre — pregunta de cierre suave, silencio, fecha concreta
+
+Termina con las respuestas a sus 3 objeciones principales, con frases exactas.
+Incluye una nota táctica corta en cada fase. Sé concreto y breve.
+Empieza directamente con "FASE 3: PRESENTACIÓN", sin título general ni menciones a "segunda mitad".
+
+${avatarDesc}`);
+    document.getElementById('res_guion').textContent = (guionA + '\n\n' + guionB)
+      .replace(/^.*\b(PRIMERA|SEGUNDA) MITAD\b.*$/gim, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+
+    animateStep(6);
+
+    // Build avatar summary cards
+    const sumData = [
+      {l:'Nombre', v: av.nombre},
+      {l:'Género / Edad', v: `${av.genero} · ${av.edad}`},
+      {l:'Ocupación', v: av.ocupacion || '—'},
+      {l:'Ciudad', v: av.ciudad || '—'},
+      {l:'Nivel fitness', v: av.nivel || '—'},
+      {l:'Redes', v: av.redes || '—'},
+    ];
+    document.getElementById('avatarSummary').innerHTML = sumData.map(d=>`
+      <div class="av-card"><div class="av-label">${d.l}</div><div class="av-val">${d.v||'—'}</div></div>
+    `).join('');
+
+    setStep(3);
+    showPanel('panelResult');
+
+  } catch(e) {
+    document.getElementById('panelGen').innerHTML = `
+      <div class="gen-wrap">
+        <div style="font-size:32px;margin-bottom:16px;">⚠️</div>
+        <div class="gen-title">Error al generar</div>
+        <div class="gen-sub" style="color:var(--accent3);">${e.message}</div>
+        <br>
+        <button class="btn btn-ghost" onclick="resetAll()">← Volver</button>
+      </div>`;
+  }
+}
+
+// ── Construir el contenido del kit como texto plano ────────────────
+function buildKitContent() {
+  const av = buildAvatarData();
+  const post = document.getElementById('res_post').innerText;
+  const hist = document.getElementById('res_hist').innerText;
+  const prop = document.getElementById('res_prop').innerText;
+  const guion = document.getElementById('res_guion').innerText;
+
+  return `SISTEMA DE MARKETING — AVATAR GENERADO CON IA
+============================================================
+Fecha: ${new Date().toLocaleDateString('es-CL')}
+============================================================
+
+PERFIL DEL AVATAR
+─────────────────
+Nombre: ${av.nombre}
+Género: ${av.genero} | Edad: ${av.edad}
+Ocupación: ${av.ocupacion} | Ciudad: ${av.ciudad}
+Ingresos: ${av.ingresos} | Nivel fitness: ${av.nivel}
+Dolor principal: ${av.dolor}
+Frustraciones: ${av.frustraciones}
+Sueño/meta: ${av.sueno}
+Emociones que busca: ${av.emociones}
+Redes sociales: ${av.redes}
+Objeciones: ${av.objeciones}
+Propuesta de valor: ${av.propuesta}
+Frase gancho: ${av.gancho}
+
+════════════════════════════════════════════════════
+1. POST DE INSTAGRAM
+════════════════════════════════════════════════════
+
+${post}
+
+════════════════════════════════════════════════════
+2. HISTORIA DE CLIENTE
+════════════════════════════════════════════════════
+
+${hist}
+
+════════════════════════════════════════════════════
+3. PROPUESTA DE SERVICIO
+════════════════════════════════════════════════════
+
+${prop}
+
+════════════════════════════════════════════════════
+4. GUIÓN DE LLAMADA DE VENTA (20 MIN)
+════════════════════════════════════════════════════
+
+${guion}
+`;
+}
+
+// ── Copiar todo al portapapeles ────────────────────────────────────
+async function copyAllContent() {
+  const errEl = document.getElementById('saveError');
+  const statusEl = document.getElementById('saveStatus');
+  errEl.style.display = 'none';
+  statusEl.style.display = 'none';
+
+  const contenido = buildKitContent();
+
+  try {
+    await navigator.clipboard.writeText(contenido);
+    statusEl.style.display = 'block';
+    statusEl.innerHTML = '✓ Kit copiado al portapapeles. Ya puedes pegarlo donde quieras.';
+  } catch (e) {
+    errEl.textContent = 'No se pudo copiar automáticamente. Selecciona y copia el texto manualmente desde las pestañas de arriba.';
+    errEl.style.display = 'block';
+  }
+}
+
+// ── Descargar como archivo .txt ─────────────────────────────────────
+function downloadAsTxt() {
+  const errEl = document.getElementById('saveError');
+  const statusEl = document.getElementById('saveStatus');
+  errEl.style.display = 'none';
+  statusEl.style.display = 'none';
+
+  const av = buildAvatarData();
+  const contenido = buildKitContent();
+
+  try {
+    const blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const nombreArchivo = (av.nombre || 'avatar').replace(/[^a-z0-9áéíóúñ]/gi, '_');
+    a.href = url;
+    a.download = `Kit-Marketing-${nombreArchivo}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    statusEl.style.display = 'block';
+    statusEl.innerHTML = '✓ Archivo descargado.';
+  } catch (e) {
+    errEl.textContent = 'No se pudo descargar el archivo: ' + e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+// Init
+updateProgress();
+</script>
+</body>
+</html>
