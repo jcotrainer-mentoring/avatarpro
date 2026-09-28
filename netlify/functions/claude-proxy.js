@@ -8,8 +8,14 @@
  *
  * Variables de entorno en Netlify:
  *   ANTHROPIC_API_KEY  → tu API key de Anthropic
- *   ACCESS_CODES       → una o varias claves separadas por coma
- *                        (ejemplo: clave-ana-8x2k,clave-luis-7m4p)
+ *   ACCESS_CODES       → una o varias claves separadas por coma y sin espacios.
+ *                        Cada clave puede llevar una fecha de vencimiento
+ *                        con el formato  clave:AAAA-MM-DD
+ *
+ *   Ejemplos:
+ *     clave-ana-8x2k                          → sin vencimiento
+ *     clave-ana-8x2k:2026-12-31               → sirve hasta el 31-12-2026 (hora de Chile)
+ *     clave-ana-8x2k:2026-12-31,clave-luis-7m4p   → una con fecha y otra sin fecha
  */
 
 const crypto = require("crypto");
@@ -19,6 +25,35 @@ function safeEqual(a, b) {
   const ha = crypto.createHash("sha256").update(a).digest();
   const hb = crypto.createHash("sha256").update(b).digest();
   return crypto.timingSafeEqual(ha, hb);
+}
+
+// Fecha de hoy en Chile, con formato AAAA-MM-DD
+function todayInChile() {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "America/Santiago" });
+}
+
+// Interpreta una entrada de ACCESS_CODES: "clave" o "clave:AAAA-MM-DD"
+function parseEntry(raw) {
+  const entry = raw.trim();
+  if (!entry) return null;
+
+  const m = entry.match(/^(.*?):(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (!m) return { code: entry, expires: null, invalidDate: false };
+
+  const code = m[1];
+  const y = Number(m[2]);
+  const mo = Number(m[3]);
+  const d = Number(m[4]);
+  if (!code) return null;
+
+  // Verifica que sea una fecha real (rechaza por ejemplo 2026-13-45)
+  const dt = new Date(Date.UTC(y, mo - 1, d));
+  const isRealDate =
+    dt.getUTCFullYear() === y && dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === d;
+  if (!isRealDate) return { code, expires: null, invalidDate: true };
+
+  const expires = `${m[2]}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  return { code, expires, invalidDate: false };
 }
 
 exports.handler = async (event) => {
@@ -44,12 +79,12 @@ exports.handler = async (event) => {
   }
 
   // ── Claves de acceso configuradas ──────────────────────────────────
-  const validCodes = (process.env.ACCESS_CODES || "")
+  const entries = (process.env.ACCESS_CODES || "")
     .split(",")
-    .map((c) => c.trim())
+    .map(parseEntry)
     .filter(Boolean);
 
-  if (validCodes.length === 0) {
+  if (entries.length === 0) {
     return {
       statusCode: 500,
       headers,
@@ -57,17 +92,36 @@ exports.handler = async (event) => {
     };
   }
 
+  if (entries.some((e) => e.invalidDate)) {
+    // No se imprime la clave, solo el aviso, para que quede en los logs de Netlify
+    console.warn("ACCESS_CODES: hay una entrada con fecha inválida; fue ignorada (nadie puede entrar con ella).");
+  }
+
   // ── Validar la clave enviada por el navegador ──────────────────────
   const provided = (event.headers["x-access-code"] || "").trim();
-  const authorized =
-    provided !== "" && validCodes.some((code) => safeEqual(code, provided));
+  const today = todayInChile();
+
+  let authorized = false;
+  let expired = false;
+  if (provided !== "") {
+    for (const e of entries) {
+      if (e.invalidDate) continue;
+      if (!safeEqual(e.code, provided)) continue;
+      if (e.expires && today > e.expires) expired = true;
+      else authorized = true;
+    }
+  }
 
   if (!authorized) {
     await new Promise((resolve) => setTimeout(resolve, 800)); // frena intentos repetidos
     return {
       statusCode: 401,
       headers,
-      body: JSON.stringify({ error: "Clave de acceso inválida." }),
+      body: JSON.stringify(
+        expired
+          ? { error: "Tu acceso venció.", reason: "expired" }
+          : { error: "Clave de acceso inválida.", reason: "invalid" }
+      ),
     };
   }
 
