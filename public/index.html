@@ -609,10 +609,16 @@ async function verifyCode(code) {
     headers: { 'Content-Type': 'application/json', 'x-access-code': code },
     body: JSON.stringify({ check: true })
   });
-  if (res.status === 401) return { ok: false, reason: 'invalid' };
+  if (res.status === 401) {
+    let reason = 'invalid';
+    try { reason = (await res.json()).reason === 'expired' ? 'expired' : 'invalid'; } catch (e) {}
+    return { ok: false, reason };
+  }
   if (!res.ok) return { ok: false, reason: 'error' };
   return { ok: true };
 }
+
+const EXPIRED_MSG = 'Tu acceso venció. Escríbele a JCOTRAINER para renovarlo.';
 
 async function submitGate() {
   const input = document.getElementById('gateInput');
@@ -625,6 +631,7 @@ async function submitGate() {
   try {
     const r = await verifyCode(code);
     if (r.ok) { storeCode(code); input.value = ''; hideGate(); }
+    else if (r.reason === 'expired') { showGate(EXPIRED_MSG); }
     else if (r.reason === 'invalid') { showGate('Clave incorrecta. Revisa que esté bien escrita.'); }
     else { showGate('No se pudo verificar la clave. Intenta de nuevo en unos minutos.'); }
   } catch (e) {
@@ -641,6 +648,7 @@ async function submitGate() {
   try {
     const r = await verifyCode(saved);
     if (r.ok) { hideGate(); }
+    else if (r.reason === 'expired') { clearCode(); showGate(EXPIRED_MSG); }
     else if (r.reason === 'invalid') { clearCode(); }
   } catch (e) {}
 })();
@@ -657,7 +665,13 @@ async function callClaude(systemPrompt, userPrompt) {
     })
   });
   if (res.status === 401) {
+    let reason = '';
+    try { reason = (await res.json()).reason || ''; } catch (e) {}
     clearCode();
+    if (reason === 'expired') {
+      showGate(EXPIRED_MSG);
+      throw new Error('Tu acceso venció. Escríbele a JCOTRAINER para renovarlo.');
+    }
     showGate('Tu clave ya no es válida. Ingresa una nueva.');
     throw new Error('Clave de acceso inválida o revocada.');
   }
