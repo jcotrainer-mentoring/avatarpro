@@ -5,14 +5,26 @@ Generador de kit de marketing con IA para entrenadores personales.
 ```
 avatarpro-netlify/
 ├── public/
-│   └── index.html              ← App completa (frontend)
+│   ├── index.html              ← App completa (frontend)
+│   └── admin/index.html        ← Panel para generar y administrar códigos de acceso
 ├── netlify/
 │   └── functions/
-│       └── claude-proxy.js     ← Función serverless (guarda la API key)
+│       ├── claude-proxy.js     ← Función serverless (guarda la API key, valida el código)
+│       └── admin.js            ← Backend del panel de administración
+├── lib/
+│   └── codigos.js              ← Almacén de códigos de acceso (Netlify Blobs)
 ├── netlify.toml                ← Config de Netlify
 ├── package.json
 └── .env.example
 ```
+
+## Códigos de acceso
+
+Los códigos se guardan en Netlify Blobs (store `codigos`), no en una variable de entorno. Para generar uno nuevo entra a `/admin` del sitio, ingresa la clave de administrador y escribe el nombre del alumno y los días de validez.
+
+Variables relacionadas (marcadas como secret en Netlify):
+- `ADMIN_ACCESS_KEY`: la clave para entrar al panel de administración de códigos (`/admin`).
+- `ACCESS_CODES`: **ya no es la fuente de verdad.** Sólo se lee una vez, en el primer arranque después de cada despliegue, para sembrar en Blobs el código compartido que estuviera vigente en ese momento (con 30 días de vencimiento desde esa siembra). Puede quedar configurada sin uso, o borrarse una vez que ese código aparezca en el panel.
 
 ## Despliegue en Netlify
 

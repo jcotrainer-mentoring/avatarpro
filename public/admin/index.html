@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Panel de códigos — Avatar Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --card: #1a1a26;
+  --border: #2a2a3d;
+  --border-light: #3a3a55;
+  --accent: #7c6fff;
+  --accent2: #4fffb0;
+  --accent3: #ff6b8a;
+  --text: #f0f0ff;
+  --muted: #8888aa;
+  --dim: #4a4a66;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 15px; line-height: 1.6; min-height: 100vh; }
+[hidden] { display: none !important; }
+
+.header { padding: 2rem 2rem 1rem; border-bottom: 1px solid var(--border); }
+.logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; letter-spacing: -0.5px; }
+.logo span { color: var(--accent); }
+
+.main { max-width: 900px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+h1 { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
+.sub { color: var(--muted); font-size: 14px; margin-bottom: 2rem; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.6rem; margin-bottom: 1.6rem; }
+.card h2 { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 1.2rem; }
+
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+label { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+input {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text); font-family: inherit; font-size: 15px; padding: 11px 13px;
+}
+input:focus { outline: none; border-color: var(--accent); }
+
+.fila { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; }
+.fila .field { flex: 1; min-width: 180px; margin-bottom: 0; }
+
+.btn { display: inline-block; border: none; cursor: pointer; font-family: inherit; font-weight: 600; font-size: 14px; padding: 12px 22px; border-radius: var(--radius-sm); }
+.btn-accent { background: var(--accent); color: #fff; }
+.btn-accent:hover { background: #6a5eff; }
+.btn-accent:disabled { background: var(--dim); color: var(--muted); cursor: not-allowed; }
+.btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border-light); font-size: 13px; padding: 8px 14px; }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+.btn-danger { background: transparent; color: var(--accent3); border: 1px solid #4a2a35; font-size: 12px; padding: 6px 10px; font-weight: 600; }
+.btn-danger:hover { border-color: var(--accent3); }
+
+.aviso { margin-top: 12px; font-size: 14px; color: var(--accent3); }
+.ok { margin-top: 12px; font-size: 14px; color: var(--accent2); }
+
+#gate { max-width: 380px; margin: 90px auto; }
+#gate h2 { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 10px; }
+
+#panel { display: none; }
+#panel.activo { display: block; }
+
+.resultado { margin-top: 16px; border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 16px 18px; display: none; }
+.resultado.activo { display: block; }
+.resultado .meta { color: var(--muted); font-size: 13px; }
+.resultado .codigo { font-size: 22px; font-weight: 700; color: var(--accent2); margin: 6px 0 10px; word-break: break-all; }
+
+table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 14px; }
+th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); }
+th { color: var(--muted); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+td.codigo { font-weight: 600; word-break: break-all; }
+.estado-activo { color: var(--accent2); font-weight: 600; }
+.estado-vencido { color: #ffb84f; font-weight: 600; }
+.estado-revocado { color: var(--accent3); font-weight: 600; }
+.vacio { color: var(--muted); font-size: 14px; padding: 14px 0; }
+.tabla-wrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">AVATAR<span>PRO</span> · Admin</div>
+</header>
+
+<main class="main">
+
+  <div id="gate">
+    <h2>Panel de códigos</h2>
+    <p class="sub">Avatar Pro — JCOTRAINER</p>
+    <div class="field">
+      <label for="gateInput">Clave de administrador</label>
+      <input type="password" id="gateInput" autocomplete="off" onkeydown="if(event.key==='Enter') entrar()">
+    </div>
+    <button class="btn btn-accent" id="gateBtn" onclick="entrar()">Entrar</button>
+    <div id="gateError" class="aviso" style="display:none"></div>
+  </div>
+
+  <div id="panel">
+    <h1>Panel de códigos</h1>
+    <p class="sub">Genera y administra los códigos de acceso de los entrenadores.</p>
+
+    <div class="card">
+      <h2>Generar código nuevo</h2>
+      <div class="fila">
+        <div class="field">
+          <label for="nombre">Nombre del alumno</label>
+          <input type="text" id="nombre" placeholder="Ej: Ana Pérez">
+        </div>
+        <div class="field" style="max-width:160px;">
+          <label for="dias">Días de validez</label>
+          <input type="number" id="dias" value="30" min="1" max="3650">
+        </div>
+        <button class="btn btn-accent" id="crearBtn" onclick="crear()">Generar</button>
+      </div>
+      <div id="crearError" class="aviso" style="display:none"></div>
+
+      <div class="resultado" id="resultado">
+        <div class="meta">Código generado para <strong id="resNombre"></strong>:</div>
+        <div class="codigo" id="resCodigo"></div>
+        <button class="btn btn-ghost" onclick="copiar()">Copiar código</button>
+        <span id="copiado" class="ok" style="display:none; margin-left:10px;">Copiado.</span>
+        <div class="meta" style="margin-top:8px;">Vence el <span id="resVence"></span>.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Códigos existentes</h2>
+      <div id="listaError" class="aviso" style="display:none"></div>
+      <div class="tabla-wrap">
+        <table>
+          <thead>
+            <tr><th>Alumno</th><th>Código</th><th>Creado</th><th>Vence</th><th>Estado</th><th></th></tr>
+          </thead>
+          <tbody id="tablaBody"></tbody>
+        </table>
+      </div>
+      <div id="listaVacia" class="vacio" hidden>Todavía no hay códigos generados.</div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const CLAVE_KEY = 'avatarpro_admin_key';
+
+function leerClave() { try { return sessionStorage.getItem(CLAVE_KEY) || ''; } catch (e) { return ''; } }
+function guardarClave(v) { try { sessionStorage.setItem(CLAVE_KEY, v); } catch (e) {} }
+function borrarClave() { try { sessionStorage.removeItem(CLAVE_KEY); } catch (e) {} }
+
+async function llamar(op, datos) {
+  const res = await fetch('/.netlify/functions/admin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-key': leerClave() },
+    body: JSON.stringify({ op, ...datos }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || ('Error ' + res.status));
+  return data;
+}
+
+function mostrarPanel() {
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('panel').classList.add('activo');
+  cargarLista();
+}
+
+async function entrar() {
+  const input = document.getElementById('gateInput');
+  const btn = document.getElementById('gateBtn');
+  const err = document.getElementById('gateError');
+  const clave = input.value.trim();
+  if (!clave) { err.textContent = 'Ingresa la clave.'; err.style.display = 'block'; return; }
+
+  guardarClave(clave);
+  btn.disabled = true; btn.textContent = 'Verificando...';
+  try {
+    await llamar('listar', {});
+    err.style.display = 'none';
+    mostrarPanel();
+  } catch (e) {
+    borrarClave();
+    err.textContent = 'Clave incorrecta.';
+    err.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Entrar';
+}
+
+async function cargarLista() {
+  const errEl = document.getElementById('listaError');
+  const body = document.getElementById('tablaBody');
+  const vacia = document.getElementById('listaVacia');
+  try {
+    const data = await llamar('listar', {});
+    const codigos = data.codigos || [];
+    body.innerHTML = '';
+    vacia.hidden = codigos.length > 0;
+    for (const c of codigos) {
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + escapar(c.nombre) + '</td>' +
+        '<td class="codigo">' + escapar(c.codigo) + '</td>' +
+        '<td>' + escapar(c.creado) + '</td>' +
+        '<td>' + escapar(c.vence) + '</td>' +
+        '<td class="estado-' + c.estado + '">' + c.estado + '</td>' +
+        '<td></td>';
+      if (c.estado !== 'revocado') {
+        const btn = document.createElement('button');
+        btn.className = 'btn-danger';
+        btn.textContent = 'Revocar';
+        btn.onclick = () => revocar(c.codigo);
+        tr.lastElementChild.appendChild(btn);
+      }
+      body.appendChild(tr);
+    }
+    errEl.style.display = 'none';
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+async function crear() {
+  const nombre = document.getElementById('nombre').value.trim();
+  const dias = Number(document.getElementById('dias').value);
+  const btn = document.getElementById('crearBtn');
+  const err = document.getElementById('crearError');
+  err.style.display = 'none';
+
+  if (!nombre) { err.textContent = 'Ingresa el nombre del alumno.'; err.style.display = 'block'; return; }
+  if (!Number.isInteger(dias) || dias < 1) { err.textContent = 'Los días de validez deben ser un número entero mayor a 0.'; err.style.display = 'block'; return; }
+
+  btn.disabled = true; btn.textContent = 'Generando...';
+  try {
+    const entrada = await llamar('crear', { nombre, dias });
+    document.getElementById('resNombre').textContent = entrada.nombre;
+    document.getElementById('resCodigo').textContent = entrada.codigo;
+    document.getElementById('resVence').textContent = entrada.vence;
+    document.getElementById('resultado').classList.add('activo');
+    document.getElementById('copiado').style.display = 'none';
+    document.getElementById('nombre').value = '';
+    cargarLista();
+  } catch (e) {
+    err.textContent = e.message;
+    err.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Generar';
+}
+
+async function revocar(codigo) {
+  if (!confirm('¿Revocar el código "' + codigo + '"? Dejará de funcionar de inmediato.')) return;
+  try {
+    await llamar('revocar', { codigo });
+    cargarLista();
+  } catch (e) {
+    alert('No se pudo revocar: ' + e.message);
+  }
+}
+
+function copiar() {
+  const codigo = document.getElementById('resCodigo').textContent;
+  navigator.clipboard.writeText(codigo).then(() => {
+    document.getElementById('copiado').style.display = 'inline';
+  });
+}
+
+function escapar(v) {
+  const d = document.createElement('div');
+  d.textContent = String(v ?? '');
+  return d.innerHTML;
+}
+
+// Si ya hay una clave guardada en esta pestaña, entra directo.
+(function initPanel() {
+  if (leerClave()) {
+    llamar('listar', {}).then(mostrarPanel).catch(borrarClave);
+  }
+})();
+</script>
+
+</body>
+</html>

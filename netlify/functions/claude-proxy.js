@@ -3,58 +3,21 @@
  * Avatar Pro — JCOTRAINER
  *
  * Proxy serverless que mantiene la API key de Anthropic en el servidor.
- * El frontend NUNCA ve la key. Además exige una clave de acceso
- * (variable de entorno ACCESS_CODES) para poder usarlo.
+ * El frontend NUNCA ve la key. Además exige una clave de acceso, validada
+ * contra el almacén de códigos en Netlify Blobs (ver lib/codigos.js y
+ * netlify/functions/admin.js, el panel que genera y administra esos códigos).
+ *
+ * ACCESS_CODES ya no es la fuente de verdad: sólo se lee una vez, en el
+ * primer arranque después del despliegue, para sembrar el código compartido
+ * que hoy circula (ver asegurarSemillaLegacy en lib/codigos.js).
  *
  * Variables de entorno en Netlify:
  *   ANTHROPIC_API_KEY  → tu API key de Anthropic
- *   ACCESS_CODES       → una o varias claves separadas por coma y sin espacios.
- *                        Cada clave puede llevar una fecha de vencimiento
- *                        con el formato  clave:AAAA-MM-DD
- *
- *   Ejemplos:
- *     clave-ana-8x2k                          → sin vencimiento
- *     clave-ana-8x2k:2026-12-31               → sirve hasta el 31-12-2026 (hora de Chile)
- *     clave-ana-8x2k:2026-12-31,clave-luis-7m4p   → una con fecha y otra sin fecha
+ *   ADMIN_ACCESS_KEY   → clave del panel de administración (netlify/functions/admin.js)
  */
 
-const crypto = require("crypto");
-
-// Compara dos textos sin filtrar información por tiempos de respuesta
-function safeEqual(a, b) {
-  const ha = crypto.createHash("sha256").update(a).digest();
-  const hb = crypto.createHash("sha256").update(b).digest();
-  return crypto.timingSafeEqual(ha, hb);
-}
-
-// Fecha de hoy en Chile, con formato AAAA-MM-DD
-function todayInChile() {
-  return new Date().toLocaleDateString("en-CA", { timeZone: "America/Santiago" });
-}
-
-// Interpreta una entrada de ACCESS_CODES: "clave" o "clave:AAAA-MM-DD"
-function parseEntry(raw) {
-  const entry = raw.trim();
-  if (!entry) return null;
-
-  const m = entry.match(/^(.*?):(\d{4})-(\d{1,2})-(\d{1,2})$/);
-  if (!m) return { code: entry, expires: null, invalidDate: false };
-
-  const code = m[1];
-  const y = Number(m[2]);
-  const mo = Number(m[3]);
-  const d = Number(m[4]);
-  if (!code) return null;
-
-  // Verifica que sea una fecha real (rechaza por ejemplo 2026-13-45)
-  const dt = new Date(Date.UTC(y, mo - 1, d));
-  const isRealDate =
-    dt.getUTCFullYear() === y && dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === d;
-  if (!isRealDate) return { code, expires: null, invalidDate: true };
-
-  const expires = `${m[2]}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-  return { code, expires, invalidDate: false };
-}
+const { getStore } = require("@netlify/blobs");
+const { NOMBRE_STORE, asegurarSemillaLegacy, estadoCodigo } = require("../../lib/codigos.js");
 
 exports.handler = async (event) => {
   // ── CORS headers ───────────────────────────────────────────────────
@@ -78,47 +41,21 @@ exports.handler = async (event) => {
     };
   }
 
-  // ── Claves de acceso configuradas ──────────────────────────────────
-  const entries = (process.env.ACCESS_CODES || "")
-    .split(",")
-    .map(parseEntry)
-    .filter(Boolean);
-
-  if (entries.length === 0) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: "ACCESS_CODES no configurada en variables de entorno." }),
-    };
-  }
-
-  if (entries.some((e) => e.invalidDate)) {
-    // No se imprime la clave, solo el aviso, para que quede en los logs de Netlify
-    console.warn("ACCESS_CODES: hay una entrada con fecha inválida; fue ignorada (nadie puede entrar con ella).");
-  }
-
-  // ── Validar la clave enviada por el navegador ──────────────────────
+  // ── Validar la clave enviada por el navegador contra Blobs ─────────
   const provided = (event.headers["x-access-code"] || "").trim();
-  const today = todayInChile();
+  const store = getStore(NOMBRE_STORE);
+  await asegurarSemillaLegacy(store, process.env.ACCESS_CODES);
 
-  let authorized = false;
-  let expired = false;
-  if (provided !== "") {
-    for (const e of entries) {
-      if (e.invalidDate) continue;
-      if (!safeEqual(e.code, provided)) continue;
-      if (e.expires && today > e.expires) expired = true;
-      else authorized = true;
+  const estado = provided ? await estadoCodigo(store, provided) : "invalido";
+  if (estado !== "ok") {
+    if (estado !== "vencido") {
+      await new Promise((resolve) => setTimeout(resolve, 800)); // frena intentos repetidos
     }
-  }
-
-  if (!authorized) {
-    await new Promise((resolve) => setTimeout(resolve, 800)); // frena intentos repetidos
     return {
       statusCode: 401,
       headers,
       body: JSON.stringify(
-        expired
+        estado === "vencido"
           ? { error: "Tu acceso venció.", reason: "expired" }
           : { error: "Clave de acceso inválida.", reason: "invalid" }
       ),
