@@ -42,8 +42,11 @@ exports.handler = async (event) => {
   }
 
   // ── Validar la clave enviada por el navegador contra Blobs ─────────
+  // Las Functions normales no reciben el contexto de Blobs automáticamente
+  // cuando el deploy se hace por CLI (bug conocido de Netlify) — se
+  // configura a mano con un Personal Access Token guardado en BLOBS_TOKEN.
   const provided = (event.headers["x-access-code"] || "").trim();
-  const store = getStore(NOMBRE_STORE);
+  const store = getStore({ name: NOMBRE_STORE, siteID: process.env.SITE_ID, token: process.env.BLOBS_TOKEN });
   await asegurarSemillaLegacy(store, process.env.ACCESS_CODES);
 
   const estado = provided ? await estadoCodigo(store, provided) : "invalido";
