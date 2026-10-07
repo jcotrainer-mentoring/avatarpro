@@ -60,7 +60,12 @@ export const handler = async (event) => {
     return json(400, { error: "Body inválido — se esperaba JSON." });
   }
 
-  const store = getStore(NOMBRE_STORE);
+  // Este sitio no inyecta el contexto de Blobs automáticamente en sus
+  // Functions normales, ni por CLI ni por build conectado a Git (a
+  // diferencia de Guion de Consulta, donde sí funciona) — probado y
+  // descartado: CLI, --build, Git-deploy, ESM, y forzar use_edge_functions.
+  // Se configura a mano con un Personal Access Token guardado en BLOBS_TOKEN.
+  const store = getStore({ name: NOMBRE_STORE, siteID: process.env.SITE_ID, token: process.env.BLOBS_TOKEN });
   await asegurarSemillaLegacy(store, process.env.ACCESS_CODES);
 
   if (body.op === "crear") {

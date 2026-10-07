@@ -42,8 +42,11 @@ export const handler = async (event) => {
   }
 
   // ── Validar la clave enviada por el navegador contra Blobs ─────────
+  // Este sitio no inyecta el contexto de Blobs automáticamente en sus
+  // Functions normales (ver nota en admin.js) — se configura a mano con
+  // un Personal Access Token guardado en BLOBS_TOKEN.
   const provided = (event.headers["x-access-code"] || "").trim();
-  const store = getStore(NOMBRE_STORE);
+  const store = getStore({ name: NOMBRE_STORE, siteID: process.env.SITE_ID, token: process.env.BLOBS_TOKEN });
   await asegurarSemillaLegacy(store, process.env.ACCESS_CODES);
 
   const estado = provided ? await estadoCodigo(store, provided) : "invalido";

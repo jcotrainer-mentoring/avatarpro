@@ -19,10 +19,6 @@
 [functions]
   node_bundler = "esbuild"        # bundler más rápido, soportado en Netlify
 
-[[edge_functions]]
-  path = "/.netlify/edge-ping"
-  function = "ping"
-
 # Headers de seguridad globales
 [[headers]]
   for = "/*"
