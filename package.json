@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Avatar Pro — Generador de kit de marketing con IA para entrenadores personales",
   "private": true,
+  "type": "module",
   "engines": {
     "node": ">=18"
   },

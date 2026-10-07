@@ -13,15 +13,15 @@
  *       | { op: "revocar",  codigo }
  */
 
-const crypto = require("crypto");
-const { getStore } = require("@netlify/blobs");
-const {
+import crypto from "node:crypto";
+import { getStore } from "@netlify/blobs";
+import {
   NOMBRE_STORE,
   asegurarSemillaLegacy,
   crearCodigo,
   listarCodigos,
   revocarCodigo,
-} = require("../../lib/codigos.js");
+} from "../../lib/codigos.js";
 
 function json(status, body) {
   return {
@@ -40,7 +40,7 @@ function claveValida(recibida) {
   return crypto.timingSafeEqual(a, b);
 }
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return json(405, { error: "method_not_allowed" });
   }

@@ -16,10 +16,10 @@
  *   ADMIN_ACCESS_KEY   → clave del panel de administración (netlify/functions/admin.js)
  */
 
-const { getStore } = require("@netlify/blobs");
-const { NOMBRE_STORE, asegurarSemillaLegacy, estadoCodigo } = require("../../lib/codigos.js");
+import { getStore } from "@netlify/blobs";
+import { NOMBRE_STORE, asegurarSemillaLegacy, estadoCodigo } from "../../lib/codigos.js";
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   // ── CORS headers ───────────────────────────────────────────────────
   const headers = {
     "Access-Control-Allow-Origin": "*",          // en producción cambia a tu dominio
