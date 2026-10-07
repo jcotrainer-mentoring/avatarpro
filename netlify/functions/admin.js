@@ -60,11 +60,7 @@ exports.handler = async (event) => {
     return json(400, { error: "Body inválido — se esperaba JSON." });
   }
 
-  // Las Functions normales (a diferencia de las Edge Functions) no reciben
-  // el contexto de Blobs automáticamente cuando el deploy se hace por CLI
-  // (bug conocido de Netlify) — se configura a mano con un Personal Access
-  // Token guardado en BLOBS_TOKEN.
-  const store = getStore({ name: NOMBRE_STORE, siteID: process.env.SITE_ID, token: process.env.BLOBS_TOKEN });
+  const store = getStore(NOMBRE_STORE);
   await asegurarSemillaLegacy(store, process.env.ACCESS_CODES);
 
   if (body.op === "crear") {
