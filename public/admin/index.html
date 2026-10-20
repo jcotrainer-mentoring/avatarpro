@@ -79,6 +79,7 @@ td.codigo { font-weight: 600; word-break: break-all; }
 .estado-vencido { color: #ffb84f; font-weight: 600; }
 .estado-revocado { color: var(--accent3); font-weight: 600; }
 .vacio { color: var(--muted); font-size: 14px; padding: 14px 0; }
+td.sin-uso { color: var(--muted); }
 .tabla-wrap { overflow-x: auto; }
 </style>
 </head>
@@ -135,7 +136,7 @@ td.codigo { font-weight: 600; word-break: break-all; }
       <div class="tabla-wrap">
         <table>
           <thead>
-            <tr><th>Alumno</th><th>Código</th><th>Creado</th><th>Vence</th><th>Estado</th><th></th></tr>
+            <tr><th>Alumno</th><th>Código</th><th>Creado</th><th>Vence</th><th>Usos</th><th>Último uso</th><th>Estado</th><th></th></tr>
           </thead>
           <tbody id="tablaBody"></tbody>
         </table>
@@ -202,11 +203,14 @@ async function cargarLista() {
     vacia.hidden = codigos.length > 0;
     for (const c of codigos) {
       const tr = document.createElement('tr');
+      const usos = c.usos || 0;
       tr.innerHTML =
         '<td>' + escapar(c.nombre) + '</td>' +
         '<td class="codigo">' + escapar(c.codigo) + '</td>' +
         '<td>' + escapar(c.creado) + '</td>' +
         '<td>' + escapar(c.vence) + '</td>' +
+        '<td' + (usos === 0 ? ' class="sin-uso"' : '') + '>' + usos + '</td>' +
+        '<td>' + (c.ultimoUso ? escapar(formatearFechaHora(c.ultimoUso)) : '—') + '</td>' +
         '<td class="estado-' + c.estado + '">' + c.estado + '</td>' +
         '<td></td>';
       if (c.estado !== 'revocado') {
@@ -273,6 +277,10 @@ function escapar(v) {
   const d = document.createElement('div');
   d.textContent = String(v ?? '');
   return d.innerHTML;
+}
+
+function formatearFechaHora(iso) {
+  return new Date(iso).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 // Si ya hay una clave guardada en esta pestaña, entra directo.

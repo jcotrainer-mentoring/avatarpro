@@ -17,7 +17,7 @@
  */
 
 import { getStore } from "@netlify/blobs";
-import { NOMBRE_STORE, asegurarSemillaLegacy, estadoCodigo } from "../../lib/codigos.js";
+import { NOMBRE_STORE, asegurarSemillaLegacy, estadoCodigo, registrarUso } from "../../lib/codigos.js";
 
 export const handler = async (event) => {
   // ── CORS headers ───────────────────────────────────────────────────
@@ -145,6 +145,11 @@ export const handler = async (event) => {
       body: JSON.stringify({ error: data?.error?.message || "Error de Anthropic API" }),
     };
   }
+
+  // Recién acá se sabe que la generación de verdad ocurrió (Anthropic
+  // respondió bien) — por eso el contador vive aquí y no antes, al validar
+  // el código, ni en el "check" de sólo verificar acceso.
+  await registrarUso(store, provided);
 
   return {
     statusCode: 200,
