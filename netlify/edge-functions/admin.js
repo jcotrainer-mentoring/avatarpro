@@ -23,8 +23,8 @@
 // Las Edge Functions reciben ese contexto por otra vía (`globalThis`). En el
 // sitio hermano (Guion de Consulta) la Edge Function que atiende a los alumnos
 // siguió funcionando perfecto durante esa misma caída, y por eso el panel se
-// movió acá: `getStore(NOMBRE_STORE)` va sin argumentos, no hay token que
-// vencer.
+// movió acá: no se le pasa ni siteID ni token a `getStore`, no hay token
+// que vencer.
 //
 // OJO: esta es la primera Edge Function de este sitio. En Guion el patrón está
 // probado desde hace meses; acá se verificó recién al desplegarla.
@@ -91,7 +91,13 @@ export default async (request) => {
     return json(400, { error: "Body inválido — se esperaba JSON." });
   }
 
-  const store = getStore(NOMBRE_STORE);
+  // `consistency: "strong"` porque este panel lee lo que acaba de escribir.
+  // Por defecto Blobs es eventualmente consistente, y se notó: crear un código
+  // y revocarlo de inmediato devolvía "ese código no existe", porque la
+  // escritura todavía no era visible para la lectura siguiente. Acá el volumen
+  // es de unas pocas operaciones al día, así que la consistencia fuerte no
+  // cuesta nada y evita un error que parece un bug del panel.
+  const store = getStore({ name: NOMBRE_STORE, consistency: "strong" });
   await asegurarSemillaLegacy(store, Netlify.env.get("ACCESS_CODES"));
 
   if (body.op === "crear") {
