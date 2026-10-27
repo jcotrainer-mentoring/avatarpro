@@ -54,7 +54,11 @@ function json(status, body) {
 
 export default async (request) => {
   if (request.method === "OPTIONS") {
-    return new Response("", { status: 204, headers: CORS });
+    // `null` y no `""`: un 204 no puede llevar cuerpo, y construir el Response
+    // con una cadena vacía igual cuenta como cuerpo y lanza. Se tradujo tal
+    // cual desde la Function normal, donde `body: ""` era lo correcto, y acá
+    // devolvía un 500 en cada preflight.
+    return new Response(null, { status: 204, headers: CORS });
   }
 
   if (request.method !== "POST") {
