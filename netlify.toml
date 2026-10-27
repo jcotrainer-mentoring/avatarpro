@@ -4,6 +4,18 @@
   publish = "public"              # carpeta con el HTML estático
   functions = "netlify/functions" # carpeta con las funciones serverless
 
+# El panel de admin es Edge Function, y no por capricho: como Function normal
+# dependía de un Personal Access Token en BLOBS_TOKEN para hablar con Blobs,
+# ese token venció el 2026-10-26 y dejó el panel caído. Las Edge Functions
+# reciben el contexto de Blobs solas. Ver netlify/edge-functions/admin.js.
+#
+# Va declarada acá arriba a propósito: las Edge Functions corren antes que los
+# redirects, pero dejarla junto al fallback `/*` de más abajo invita a que
+# alguien la mueva y la rompa sin darse cuenta.
+[[edge_functions]]
+  path = "/api/admin"
+  function = "admin"
+
 # Redirige /api/claude → función serverless (URL limpia para el frontend)
 [[redirects]]
   from   = "/api/claude"

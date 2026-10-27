@@ -155,7 +155,7 @@ function guardarClave(v) { try { sessionStorage.setItem(CLAVE_KEY, v); } catch (
 function borrarClave() { try { sessionStorage.removeItem(CLAVE_KEY); } catch (e) {} }
 
 async function llamar(op, datos) {
-  const res = await fetch('/.netlify/functions/admin', {
+  const res = await fetch('/api/admin', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-admin-key': leerClave() },
     body: JSON.stringify({ op, ...datos }),

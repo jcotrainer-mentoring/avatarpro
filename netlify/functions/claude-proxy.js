@@ -5,7 +5,7 @@
  * Proxy serverless que mantiene la API key de Anthropic en el servidor.
  * El frontend NUNCA ve la key. Además exige una clave de acceso, validada
  * contra el almacén de códigos en Netlify Blobs (ver lib/codigos.js y
- * netlify/functions/admin.js, el panel que genera y administra esos códigos).
+ * netlify/edge-functions/admin.js, el panel que genera y administra esos códigos).
  *
  * ACCESS_CODES ya no es la fuente de verdad: sólo se lee una vez, en el
  * primer arranque después del despliegue, para sembrar el código compartido
@@ -13,7 +13,7 @@
  *
  * Variables de entorno en Netlify:
  *   ANTHROPIC_API_KEY  → tu API key de Anthropic
- *   ADMIN_ACCESS_KEY   → clave del panel de administración (netlify/functions/admin.js)
+ *   ADMIN_ACCESS_KEY   → clave del panel de administración (netlify/edge-functions/admin.js)
  */
 
 import { getStore } from "@netlify/blobs";
