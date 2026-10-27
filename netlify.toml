@@ -16,11 +16,15 @@
   path = "/api/admin"
   function = "admin"
 
-# Redirige /api/claude → función serverless (URL limpia para el frontend)
-[[redirects]]
-  from   = "/api/claude"
-  to     = "/.netlify/functions/claude-proxy"
-  status = 200
+# El proxy de la IA, por lo mismo que el panel: como Function normal dependía
+# de BLOBS_TOKEN para validar los códigos de acceso contra Blobs, y el día que
+# ese token venza se quedan sin herramienta todos los alumnos. Acá no hay token.
+#
+# Antes esta ruta era un redirect a /.netlify/functions/claude-proxy; el
+# frontend sigue llamando a /api/claude igual que siempre.
+[[edge_functions]]
+  path = "/api/claude"
+  function = "claude-proxy"
 
 # SPA fallback — por si agregas rutas en el futuro
 [[redirects]]
